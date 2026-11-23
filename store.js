@@ -3,8 +3,13 @@
 // Otherwise it runs in demo mode: uploads stay in this browser (IndexedDB) and choices in localStorage.
 (function () {
   var cfg = window.PERSONA_CONFIG || {};
-  var sb = (cfg.supabaseUrl && cfg.supabaseAnonKey && window.supabase)
-    ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
+  // Works with both the legacy anon key (eyJ...) and the new publishable key (sb_publishable_...).
+  var key = (cfg.supabaseAnonKey || cfg.supabasePublishableKey || "").trim();
+  var sb = null;
+  if (cfg.supabaseUrl && key && window.supabase) {
+    try { sb = window.supabase.createClient(cfg.supabaseUrl.trim().replace(/\/+$/, ""), key, { auth: { persistSession: true, detectSessionInUrl: true, flowType: "pkce" } }); }
+    catch (e) { console.warn("Supabase disabled:", e); sb = null; }
+  }
   var BUCKET = "character-images";
 
   // ---------- demo storage ----------
