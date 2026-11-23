@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio — Persona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="studio" id="studio" hidden>
+  <div class="studio-top">
+    <div>
+      <div class="eyebrow" id="who"></div>
+      <h1>Studio</h1>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn ghost" id="view" href="#">View public profile</a>
+      <button class="btn ghost" id="out">Sign out</button>
+    </div>
+  </div>
+
+  <div class="allowance" id="allowance"></div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <strong>Upload images</strong>
+    <span id="drop-sub">Drop files here or click to choose. New uploads stay hidden until you switch them live.</span>
+  </label>
+
+  <div class="studio-bar"><span id="count"></span><span>Switch on to publish</span></div>
+  <div class="sgrid" id="grid"></div>
+  <p class="note" id="mode"></p>
+</main>
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
+  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+  var current = CREATOR.characters[0], user = null;
+  function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
+
+  Studio.session().then(function (s) {
+    if (!s) { location.href = "login.html"; return; }
+    user = s;
+    document.getElementById("studio").hidden = false;
+    document.getElementById("who").textContent = "Signed in as " + (s.name || s.email);
+    if (Studio.mode === "demo") document.getElementById("mode").textContent =
+      "Demo mode: uploads and choices are saved in this browser only. Connect Supabase to save them for everyone.";
+    renderTabs(); load();
+  });
+
+  document.getElementById("out").onclick = function () { Studio.signOut().then(function () { location.href = "./"; }); };
+
+  function renderTabs() {
+    // The creator's own characters first, then the featured ones.
+    var order = CREATOR.characters.concat(CHARACTERS.map(function (c) { return c.slug; }).filter(function (s) { return CREATOR.characters.indexOf(s) < 0; }));
+    document.getElementById("tabs").innerHTML = order.map(function (s) {
+      var c = bySlug(s);
+      return '<button data-s="' + s + '" class="' + (s === current ? "on" : "") + '">' + esc(c.name) + (CREATOR.characters.indexOf(s) > -1 ? " · yours" : "") + '</button>';
+    }).join("");
+    document.querySelectorAll("#tabs button").forEach(function (b) { b.onclick = function () { current = b.dataset.s; renderTabs(); load(); }; });
+  }
+
+  function renderAllowance(q) {
+    var pct = Math.min(100, (q.points % Studio.POINTS_PER_UPLOAD) / Studio.POINTS_PER_UPLOAD * 100);
+    document.getElementById("allowance").innerHTML =
+      '<div><dt>Uploads</dt><dd>' + q.used + ' of ' + q.limit + ' used</dd></div>' +
+      '<div><dt>Points</dt><dd>' + q.points + '</dd></div>' +
+      '<div class="grow"><dt>Next upload unlocks in ' + q.toNext + ' points</dt><div class="meter"><span style="width:' + pct + '%"></span></div></div>' +
+      (Studio.mode === "demo" ? '<div><button class="linkbtn" id="pts">+10 points (demo)</button></div>' : '');
+    var b = document.getElementById("pts"); if (b) b.onclick = function () { Studio.addDemoPoints(10); refreshQuota(); };
+    var full = q.left <= 0;
+    document.getElementById("drop").classList.toggle("locked", full);
+    document.getElementById("file").disabled = full;
+    document.getElementById("drop-sub").textContent = full
+      ? "You've used all " + q.limit + " uploads. Every " + Studio.POINTS_PER_UPLOAD + " points unlocks one more."
+      : q.left + " upload" + (q.left === 1 ? "" : "s") + " left. Drop files here or click to choose. New uploads stay hidden until you switch them live.";
+    return q;
+  }
+  function refreshQuota() { return Studio.quota().then(renderAllowance); }
+
+  function load() {
+    var c = bySlug(current);
+    document.getElementById("view").href = "profile.html?c=" + c.slug;
+    refreshQuota();
+    Studio.all(c).then(function (list) {
+      var liveN = list.filter(function (i) { return i.live; }).length;
+      document.getElementById("count").textContent = liveN + " of " + list.length + " live";
+      var grid = document.getElementById("grid");
+      if (!list.length) { grid.innerHTML = '<p class="empty" style="grid-column:1/-1">No images yet. Upload the first ones above.</p>'; return; }
+      grid.innerHTML = list.map(function (im, i) {
+        return '<div class="sitem' + (im.live ? "" : " off") + '"><div class="tile">' + tileImg(im, c.name) + '</div>' +
+          '<div class="sitem-row"><label class="toggle"><input type="checkbox" data-i="' + i + '"' + (im.live ? " checked" : "") + '> ' + (im.live ? "Live" : "Hidden") + '</label>' +
+          (im.uploaded ? '<button class="linkbtn" data-del="' + i + '">Delete</button>' : '<span class="badge">Featured</span>') + '</div></div>';
+      }).join("");
+      grid.querySelectorAll("input[type=checkbox]").forEach(function (cb) {
+        cb.onchange = function () { Promise.resolve(Studio.setLive(c, list[+cb.dataset.i].id, cb.checked)).then(load); };
+      });
+      grid.querySelectorAll("[data-del]").forEach(function (b) {
+        b.onclick = function () { Studio.remove(c, list[+b.dataset.del]).then(load); };
+      });
+    });
+  }
+
+  function handle(fileList) {
+    var files = Array.prototype.slice.call(fileList);
+    Studio.quota().then(function (q) {
+      var take = files.slice(0, q.left);
+      if (!take.length) return;
+      return Studio.upload(bySlug(current), take);
+    }).then(load).catch(function (e) { document.getElementById("mode").textContent = "Upload failed: " + e.message; });
+  }
+  var drop = document.getElementById("drop");
+  document.getElementById("file").onchange = function (e) { handle(e.target.files); e.target.value = ""; };
+  ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); }); });
+  drop.addEventListener("drop", function (e) { if (!document.getElementById("file").disabled) handle(e.dataTransfer.files); });
+</script>
+</body>
+</html>

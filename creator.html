@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noor Vale — Persona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main>
+  <section class="creator-head">
+    <div class="big-avatar" id="ava"></div>
+    <div>
+      <div class="eyebrow">Creator</div>
+      <h1 id="name"></h1>
+      <div class="user" id="user"></div>
+      <p id="bio"></p>
+      <div class="stats" id="stats"></div>
+    </div>
+    <a class="btn ghost" href="studio.html">Open Studio</a>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>Characters</h2><span id="n"></span></div>
+    <div class="roster" id="roster"></div>
+  </section>
+</main>
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
+  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+  var mine = CHARACTERS.filter(function (c) { return CREATOR.characters.indexOf(c.slug) > -1; });
+  document.title = CREATOR.name + " — Persona";
+  document.getElementById("ava").textContent = CREATOR.name.split(" ").map(function (w) { return w[0]; }).join("");
+  document.getElementById("name").textContent = CREATOR.name;
+  document.getElementById("user").textContent = "@" + CREATOR.username + " · " + CREATOR.studio + " · " + CREATOR.location;
+  document.getElementById("bio").textContent = CREATOR.bio;
+  document.getElementById("n").textContent = ("0" + mine.length).slice(-2);
+  Promise.all(mine.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
+    var total = lists.reduce(function (a, l) { return a + l.length; }, 0);
+    document.getElementById("stats").innerHTML = '<span><b>' + mine.length + '</b>Character' + (mine.length === 1 ? "" : "s") + '</span>' +
+      '<span><b>' + total + '</b>Live images</span><span><b>' + esc(CREATOR.joined) + '</b>Joined</span>';
+    document.getElementById("roster").innerHTML = mine.map(function (c, i) {
+      var cover = lists[i][0];
+      return '<a class="card" href="profile.html?c=' + c.slug + '"><div class="tile">' + (cover ? tileImg(cover, c.name) : '<div class="ph">' + c.name[0] + '</div>') + '</div>' +
+        '<div class="card-meta"><h3>' + esc(c.name) + '</h3><span>' + lists[i].length + ' live</span></div><p>' + esc(c.tagline) + '</p></a>';
+    }).join("");
+  });
+</script>
+</body>
+</html>

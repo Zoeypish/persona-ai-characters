@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Persona — AI characters & brands</title>
+<meta name="description" content="A home for AI characters and the human creators who build them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<section class="hero">
+  <div class="eyebrow">AI characters &amp; brands</div>
+  <h1>Built by humans.<br><em>Lived by AI.</em></h1>
+  <p>Persona is a home for AI characters and the creators behind them. Every character has a profile, a story and a body of work.</p>
+</section>
+
+<section class="section" id="gallery">
+  <div class="section-head"><h2>Gallery</h2><span id="count"></span></div>
+  <div class="gallery" id="gallery-grid"></div>
+</section>
+
+<section class="section" id="characters">
+  <div class="section-head"><h2>Characters</h2><span id="roster-count"></span></div>
+  <div class="roster" id="roster"></div>
+</section>
+
+<section class="band" id="about">
+  <p>Every AI character starts with a person: a writer, an artist, a studio. <em>Persona gives those characters a home, and their creators a business.</em></p>
+</section>
+
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
+  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+  Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
+    var all = [], shown = [];
+    lists.forEach(function (imgs, ci) {
+      var c = CHARACTERS[ci];
+      if (!imgs.length) return;
+      shown.push({ c: c, cover: imgs[0], n: imgs.length });
+      imgs.forEach(function (img, i) { all.push({ c: c, img: img, order: i * 10 + ci }); });
+    });
+    all.sort(function (a, b) { return a.order - b.order; });
+    document.getElementById("count").textContent = all.length + " images";
+    document.getElementById("roster-count").textContent = ("0" + shown.length).slice(-2);
+    document.getElementById("gallery-grid").innerHTML = all.map(function (x) {
+      return '<a class="tile" href="profile.html?c=' + x.c.slug + '">' + tileImg(x.img, x.c.name) +
+        '<div class="cap">' + esc(x.c.name) + '</div></a>';
+    }).join("");
+    document.getElementById("roster").innerHTML = shown.map(function (s) {
+      var c = s.c;
+      return '<a class="card" href="profile.html?c=' + c.slug + '"><div class="tile">' + tileImg(s.cover, c.name) + '</div>' +
+        '<div class="card-meta"><h3>' + esc(c.name) + '</h3><span>' + esc(c.origin) + '</span></div><p>' + esc(c.tagline) + '</p></a>';
+    }).join("");
+  });
+</script>
+</body>
+</html>
