@@ -60,3 +60,10 @@ create policy "creators remove" on storage.objects for delete to authenticated u
 
 -- To give a creator points (e.g. from an admin tool or the SQL editor):
 --   update public.creators set points = points + 10 where username = 'noorvale';
+
+-- Table permissions for the API roles (RLS above still decides which rows).
+grant usage on schema public to anon, authenticated;
+grant select on public.images, public.creators to anon, authenticated;
+grant insert, update, delete on public.images to authenticated;
+grant update on public.creators to authenticated;
+grant execute on function public.upload_allowance(uuid), public.uploads_used(uuid) to anon, authenticated;

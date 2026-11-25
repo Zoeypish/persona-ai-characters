@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Persona</title>
+<meta name="description" content="A home for AI characters and the human creators who build them.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -14,13 +15,6 @@
 <header id="nav"></header>
 
 <main id="main"></main>
-
-<div class="lightbox" id="lb">
-  <button class="lb-close" aria-label="Close">Close</button>
-  <button class="lb-prev" aria-label="Previous">Prev</button>
-  <img id="lb-img" alt="">
-  <button class="lb-next" aria-label="Next">Next</button>
-</div>
 
 <footer>
   <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
@@ -35,61 +29,37 @@
 <script src="app.js"></script>
 <script>
   var slug = new URLSearchParams(location.search).get("c");
-  var idx = Math.max(0, CHARACTERS.findIndex(function (c) { return c.slug === slug; }));
-  var c = CHARACTERS[idx], next = CHARACTERS[(idx + 1) % CHARACTERS.length];
-  var imgs = [];
-  document.title = c.name + " — Persona";
-
+  var c = CHARACTERS.filter(function (x) { return x.slug === slug; })[0] || CHARACTERS[0];
+  var pins = [], tab = "pins";
+  document.title = c.name + " · Persona";
   function fact(k, v) { return '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'; }
-  function pad(n) { return ("0" + n).slice(-2); }
   function render() {
     var creatorHtml = c.creatorUsername ? '<a href="creator.html" class="ulink">' + esc(c.creator) + '</a>' : esc(c.creator);
-    var follow = c.creatorUsername
-      ? '<a class="follow" href="creator.html">View creator @' + esc(c.creatorUsername) + '</a>'
-      : '<a class="follow" href="' + c.link + '" target="_blank" rel="noopener">Follow ' + esc(c.handle) + '</a>';
-    document.getElementById("main").innerHTML =
-      '<section class="profile">' +
-        '<div><div class="tile portrait">' + (imgs[0] ? tileImg(imgs[0], c.name) : '<div class="ph">' + c.name[0] + '</div>') + '</div></div>' +
-        '<div>' +
-          '<a class="back" href="./#characters">← All characters</a>' +
-          '<div class="eyebrow">' + esc(c.category) + '</div>' +
-          '<h1>' + esc(c.name) + '</h1>' +
-          '<p class="tagline">' + esc(c.tagline) + '</p>' +
+    var body = tab === "pins"
+      ? (pins.length ? '<div class="pins">' + pins.map(pinHtml).join("") + '</div>' : '<p class="empty-pins">No images live yet. The creator picks what goes live in the Studio.</p>')
+      : '<div class="about">' +
           '<dl class="facts">' + fact("Handle", esc(c.handle)) + fact("Based in", esc(c.origin)) + fact("Created by", creatorHtml) +
             fact("Since", esc(c.since)) + fact("Audience", esc(c.audience)) + fact("Category", esc(c.category)) + '</dl>' +
           '<div class="bio">' + c.bio.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join("") + '</div>' +
           '<ul class="known">' + c.knownFor.map(function (k) { return '<li>' + esc(k) + '</li>'; }).join("") + '</ul>' +
-          follow +
-        '</div>' +
+          (c.link && /^http/.test(c.link) ? '<p class="note"><a class="ulink" href="' + c.link + '" target="_blank" rel="noopener">' + esc(c.handle) + ' on Instagram</a></p>' : '') +
+        '</div>';
+    document.getElementById("main").innerHTML =
+      '<section class="phead">' +
+        '<span class="big-ava" data-ava="' + c.slug + '"></span>' +
+        '<h1>' + esc(c.name) + '</h1>' +
+        '<p class="phandle">' + esc(c.handle) + '</p>' +
+        '<p class="ptag">' + esc(c.tagline) + '</p>' +
+        '<p class="pby">Created by ' + creatorHtml + ' · ' + esc(c.origin) + '</p>' +
+        '<div class="pactions">' + followBtn(c.slug, "lg") + '</div>' +
+        '<div class="ptabs"><button data-tab="pins" class="' + (tab === "pins" ? "on" : "") + '">Pins</button><button data-tab="about" class="' + (tab === "about" ? "on" : "") + '">About</button></div>' +
       '</section>' +
-      '<section class="section">' +
-        '<div class="section-head"><h2>Gallery</h2><span>' + pad(imgs.length) + ' images</span></div>' +
-        (imgs.length ? '<div class="grid6">' + imgs.map(function (im, i) {
-          var cap = im.creditUrl ? 'Image via <a href="' + im.creditUrl + '" target="_blank" rel="noopener">' + esc(im.credit) + '</a> · © ' + esc(c.creator)
-            : (im.credit ? esc(im.credit) : '');
-          return '<figure><div class="tile" data-i="' + i + '">' + tileImg(im, c.name) + '</div>' +
-            (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
-        }).join("") + '</div>' : '<p class="empty">No images live yet. The creator picks what goes live in the Studio.</p>') +
-      '</section>' +
-      '<div class="next"><span>Next character</span><a href="profile.html?c=' + next.slug + '">' + esc(next.name) + ' →</a></div>';
-    document.querySelectorAll(".grid6 .tile").forEach(function (t) { t.onclick = function () { show(+t.dataset.i); }; });
+      '<section class="feed">' + body + '</section>';
+    fillAvatars(document.getElementById("main"));
+    document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { tab = b.dataset.tab; render(); }; });
   }
   render();
-  Studio.liveFor(c).then(function (list) { imgs = list; render(); });
-
-  // Lightbox
-  var lb = document.getElementById("lb"), lbImg = document.getElementById("lb-img"), cur = 0;
-  function show(i) { cur = (i + imgs.length) % imgs.length; lbImg.src = imgs[cur].src; lbImg.alt = imgs[cur].alt; lb.classList.add("open"); }
-  lb.querySelector(".lb-close").onclick = function () { lb.classList.remove("open"); };
-  lb.querySelector(".lb-prev").onclick = function (e) { e.stopPropagation(); show(cur - 1); };
-  lb.querySelector(".lb-next").onclick = function (e) { e.stopPropagation(); show(cur + 1); };
-  lb.onclick = function (e) { if (e.target === lb) lb.classList.remove("open"); };
-  document.onkeydown = function (e) {
-    if (!lb.classList.contains("open")) return;
-    if (e.key === "Escape") lb.classList.remove("open");
-    if (e.key === "ArrowRight") show(cur + 1);
-    if (e.key === "ArrowLeft") show(cur - 1);
-  };
+  loadAllLive().then(function (d) { pins = d[c.slug] || []; render(); });
 </script>
 </body>
 </html>

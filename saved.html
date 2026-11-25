@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saved · Persona</title>
+<meta name="description" content="A home for AI characters and the human creators who build them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main>
+  <section class="phead">
+    <h1>Saved</h1>
+    <p class="ptag">Your saved looks and the characters you follow. Kept on this device.</p>
+    <div class="ptabs"><button data-tab="pins" class="on">Pins</button><button data-tab="following">Following</button></div>
+  </section>
+  <section class="feed" id="body"></section>
+</main>
+
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
+  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+  var tab = "pins";
+  function render() {
+    var el = document.getElementById("body");
+    if (tab === "pins") {
+      var s = Social.saved();
+      el.innerHTML = s.length ? '<div class="pins">' + s.map(pinHtml).join("") + '</div>'
+        : '<p class="empty-pins">Nothing saved yet. Tap Save on any image to keep it here.</p><p class="center"><a class="pill dark" href="./">Explore</a></p>';
+    } else {
+      var f = Social.following().map(charBySlug).filter(Boolean);
+      el.innerHTML = f.length ? '<div class="follow-list">' + f.map(function (c) {
+        return '<div class="frow"><a href="profile.html?c=' + c.slug + '" class="who"><span class="mini-ava lg" data-ava="' + c.slug + '"></span><span><b>' + esc(c.name) + '</b><small>' + esc(c.tagline) + '</small></span></a>' + followBtn(c.slug) + '</div>';
+      }).join("") + '</div>' : '<p class="empty-pins">You are not following anyone yet.</p><p class="center"><a class="pill dark" href="./">Find characters</a></p>';
+    }
+    fillAvatars(el);
+  }
+  document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () {
+    tab = b.dataset.tab; document.querySelectorAll("[data-tab]").forEach(function (x) { x.classList.toggle("on", x === b); }); render(); }; });
+  document.addEventListener("persona:saved", function () { if (tab === "pins") render(); });
+  loadAllLive().then(render);
+</script>
+</body>
+</html>

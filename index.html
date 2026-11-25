@@ -14,25 +14,10 @@
 <body>
 <header id="nav"></header>
 
-<section class="hero">
-  <div class="eyebrow">AI characters &amp; brands</div>
-  <h1>Built by humans.<br><em>Lived by AI.</em></h1>
-  <p>Persona is a home for AI characters and the creators behind them. Every character has a profile, a story and a body of work.</p>
-</section>
-
-<section class="section" id="gallery">
-  <div class="section-head"><h2>Gallery</h2><span id="count"></span></div>
-  <div class="gallery" id="gallery-grid"></div>
-</section>
-
-<section class="section" id="characters">
-  <div class="section-head"><h2>Characters</h2><span id="roster-count"></span></div>
-  <div class="roster" id="roster"></div>
-</section>
-
-<section class="band" id="about">
-  <p>Every AI character starts with a person: a writer, an artist, a studio. <em>Persona gives those characters a home, and their creators a business.</em></p>
-</section>
+<main class="feed">
+  <div class="chips" id="chips"></div>
+  <div class="pins" id="pins"></div>
+</main>
 
 <footer>
   <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
@@ -46,27 +31,33 @@
 <script src="store.js"></script>
 <script src="app.js"></script>
 <script>
-  Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
-    var all = [], shown = [];
-    lists.forEach(function (imgs, ci) {
-      var c = CHARACTERS[ci];
-      if (!imgs.length) return;
-      shown.push({ c: c, cover: imgs[0], n: imgs.length });
-      imgs.forEach(function (img, i) { all.push({ c: c, img: img, order: i * 10 + ci }); });
-    });
-    all.sort(function (a, b) { return a.order - b.order; });
-    document.getElementById("count").textContent = all.length + " images";
-    document.getElementById("roster-count").textContent = ("0" + shown.length).slice(-2);
-    document.getElementById("gallery-grid").innerHTML = all.map(function (x) {
-      return '<a class="tile" href="profile.html?c=' + x.c.slug + '">' + tileImg(x.img, x.c.name) +
-        '<div class="cap">' + esc(x.c.name) + '</div></a>';
+  var DATA = {}, filter = new URLSearchParams(location.search).get("c") || "all";
+  function chips() {
+    var list = [{ slug: "all", name: "All" }, { slug: "following", name: "Following" }].concat(CHARACTERS.filter(function (c) { return (DATA[c.slug] || []).length; }));
+    document.getElementById("chips").innerHTML = list.map(function (c) {
+      return '<button class="chip' + (filter === c.slug ? " on" : "") + '" data-chip="' + c.slug + '">' +
+        (c.slug !== "all" && c.slug !== "following" ? '<span class="mini-ava" data-ava="' + c.slug + '"></span>' : '') + esc(c.name) + '</button>';
     }).join("");
-    document.getElementById("roster").innerHTML = shown.map(function (s) {
-      var c = s.c;
-      return '<a class="card" href="profile.html?c=' + c.slug + '"><div class="tile">' + tileImg(s.cover, c.name) + '</div>' +
-        '<div class="card-meta"><h3>' + esc(c.name) + '</h3><span>' + esc(c.origin) + '</span></div><p>' + esc(c.tagline) + '</p></a>';
-    }).join("");
-  });
+    fillAvatars(document.getElementById("chips"));
+  }
+  function render() {
+    var pins = [], f = Social.following();
+    var slugs = filter === "all" ? CHARACTERS.map(function (c) { return c.slug; }) : filter === "following" ? f : [filter];
+    // interleave characters so the feed feels mixed
+    var max = 0; slugs.forEach(function (s) { max = Math.max(max, (DATA[s] || []).length); });
+    for (var i = 0; i < max; i++) slugs.forEach(function (s) { var p = (DATA[s] || [])[i]; if (p) pins.push(p); });
+    var el = document.getElementById("pins");
+    if (!pins.length) {
+      el.innerHTML = '<p class="empty-pins">' + (filter === "following" ? 'Follow a character to see their pins here.' : 'Nothing live yet.') + '</p>';
+    } else el.innerHTML = pins.map(pinHtml).join("");
+    fillAvatars(el); chips();
+  }
+  document.getElementById("chips").onclick = function (e) {
+    var b = e.target.closest("[data-chip]"); if (!b) return;
+    filter = b.dataset.chip; history.replaceState(null, "", filter === "all" ? "./" : "?c=" + filter); render();
+  };
+  document.addEventListener("persona:follow", function () { if (filter === "following") render(); });
+  loadAllLive().then(function (d) { DATA = d; render(); });
 </script>
 </body>
 </html>

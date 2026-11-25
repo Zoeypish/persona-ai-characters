@@ -16,7 +16,7 @@ Import this repo in Vercel (framework preset: Other, no build command). That's i
 ## Connect Supabase
 1. In Supabase, open the SQL editor and run `supabase/schema.sql`.
 2. Authentication → Providers → enable **Google** (needs a Google OAuth client ID and secret).
-3. Authentication → URL Configuration → add `https://<your-site>/studio.html` to Redirect URLs.
+3. Authentication → URL Configuration → set Site URL to `https://<your-site>` and add `https://<your-site>/**` to Redirect URLs (otherwise Google sign-in returns to localhost:3000).
 4. In Vercel → Project → Settings → Environment Variables, add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Project Settings → API in Supabase), then redeploy.
    (Or paste them into `config.js`. The anon key is public by design; access is protected by row-level security.)
 5. Give a creator points: `update public.creators set points = points + 10 where id = '<user id>';`
