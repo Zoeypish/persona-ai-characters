@@ -1,0 +1,238 @@
+[
+  {
+    "store": "Aimé Leon Dore",
+    "domain": "www.aimeleondore.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 473,
+    "on_sale": 0,
+    "kept": 100,
+    "kept_on_sale": 0
+  },
+  {
+    "store": "Kith",
+    "domain": "kith.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 432,
+    "on_sale": 2,
+    "kept": 100,
+    "kept_on_sale": 0
+  },
+  {
+    "store": "Fear of God",
+    "domain": "fearofgod.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 471,
+    "on_sale": 288,
+    "kept": 100,
+    "kept_on_sale": 99
+  },
+  {
+    "store": "Cult Gaia",
+    "domain": "cultgaia.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 488,
+    "on_sale": 36,
+    "kept": 100,
+    "kept_on_sale": 2
+  },
+  {
+    "store": "Staud",
+    "domain": "staud.clothing",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 489,
+    "on_sale": 485,
+    "kept": 100,
+    "kept_on_sale": 96
+  },
+  {
+    "store": "Djerf Avenue",
+    "domain": "djerfavenue.com",
+    "status": "no products.json (JSONDecodeError: Expecting value: line 1 column 1 (char 0))"
+  },
+  {
+    "store": "House of Sunny",
+    "domain": "houseofsunny.co.uk",
+    "status": "ok",
+    "currency": "GBP",
+    "scanned": 142,
+    "in_stock": 87,
+    "on_sale": 71,
+    "kept": 87,
+    "kept_on_sale": 71
+  },
+  {
+    "store": "Réalisation Par",
+    "domain": "realisationpar.com",
+    "status": "no products.json (HTTPError: HTTP Error 404: Not Found)"
+  },
+  {
+    "store": "Rouje",
+    "domain": "www.rouje.com",
+    "status": "ok",
+    "currency": "EUR",
+    "scanned": 500,
+    "in_stock": 483,
+    "on_sale": 162,
+    "kept": 100,
+    "kept_on_sale": 99
+  },
+  {
+    "store": "Mirror Palais",
+    "domain": "mirrorpalais.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 141,
+    "in_stock": 134,
+    "on_sale": 32,
+    "kept": 100,
+    "kept_on_sale": 31
+  },
+  {
+    "store": "Paloma Wool",
+    "domain": "palomawool.com",
+    "status": "ok",
+    "currency": "EUR",
+    "scanned": 500,
+    "in_stock": 353,
+    "on_sale": 0,
+    "kept": 100,
+    "kept_on_sale": 0
+  },
+  {
+    "store": "Sandy Liang",
+    "domain": "sandyliang.info",
+    "robots": "unreadable (HTTPError)",
+    "status": "no products.json (HTTPError: HTTP Error 404: Not Found)"
+  },
+  {
+    "store": "Bode",
+    "domain": "bode.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 471,
+    "on_sale": 0,
+    "kept": 100,
+    "kept_on_sale": 0
+  },
+  {
+    "store": "Ulla Johnson",
+    "domain": "ullajohnson.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 499,
+    "on_sale": 486,
+    "kept": 100,
+    "kept_on_sale": 87
+  },
+  {
+    "store": "LoveShackFancy",
+    "domain": "www.loveshackfancy.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 490,
+    "on_sale": 305,
+    "kept": 100,
+    "kept_on_sale": 92
+  },
+  {
+    "store": "Mother Denim",
+    "domain": "www.motherdenim.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 365,
+    "on_sale": 358,
+    "kept": 100,
+    "kept_on_sale": 93
+  },
+  {
+    "store": "Faithfull the Brand",
+    "domain": "faithfullthebrand.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 471,
+    "on_sale": 350,
+    "kept": 100,
+    "kept_on_sale": 65
+  },
+  {
+    "store": "Represent",
+    "domain": "representclo.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 430,
+    "on_sale": 286,
+    "kept": 100,
+    "kept_on_sale": 99
+  },
+  {
+    "store": "Khaite",
+    "domain": "khaite.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 468,
+    "on_sale": 372,
+    "kept": 100,
+    "kept_on_sale": 68
+  },
+  {
+    "store": "Hanifa",
+    "domain": "hanifa.co",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 108,
+    "in_stock": 51,
+    "on_sale": 33,
+    "kept": 51,
+    "kept_on_sale": 33
+  },
+  {
+    "store": "Collina Strada",
+    "domain": "collinastrada.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 498,
+    "on_sale": 248,
+    "kept": 100,
+    "kept_on_sale": 8
+  },
+  {
+    "store": "Brain Dead",
+    "domain": "wearebraindead.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 446,
+    "on_sale": 89,
+    "kept": 100,
+    "kept_on_sale": 31
+  },
+  {
+    "store": "Stüssy",
+    "domain": "www.stussy.com",
+    "status": "ok",
+    "currency": "USD",
+    "scanned": 500,
+    "in_stock": 449,
+    "on_sale": 0,
+    "kept": 100,
+    "kept_on_sale": 0
+  }
+]
