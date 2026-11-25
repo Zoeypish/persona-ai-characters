@@ -28,6 +28,21 @@
   <div class="allowance" id="allowance"></div>
 
   <div class="tabs" id="tabs"></div>
+  <form class="newchar" id="newchar" hidden>
+    <div class="newchar-grid">
+      <label>Name<input name="name" required maxlength="60" placeholder="Nova Reyes"></label>
+      <label>Handle<input name="handle" maxlength="40" placeholder="@novareyes.ai"></label>
+      <label>Tagline<input name="tagline" maxlength="120" placeholder="One line that sums them up"></label>
+      <label>Based in<input name="origin" maxlength="60" placeholder="Toronto, Canada"></label>
+      <label>Category<input name="category" maxlength="60" placeholder="Fashion · Music"></label>
+      <label class="wide">Bio<textarea name="bio" rows="3" maxlength="1200" placeholder="Who they are. A blank line starts a new paragraph."></textarea></label>
+    </div>
+    <div class="newchar-row">
+      <button class="btn" type="submit">Create character</button>
+      <button class="btn ghost" type="button" id="newchar-cancel">Cancel</button>
+      <span class="err" id="newchar-err"></span>
+    </div>
+  </form>
 
   <label class="drop" id="drop">
     <input type="file" id="file" accept="image/*" multiple hidden>
@@ -50,16 +65,19 @@
 <script src="store.js"></script>
 <script src="app.js"></script>
 <script>
-  var current = CREATOR.characters[0], user = null;
+  var current = null, user = null;
   function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
+  function mine(c) { return Studio.isMine(c, user); }
 
-  Studio.session().then(function (s) {
+  Promise.all([Studio.session(), PersonaReady]).then(function (r) { var s = r[0];
     if (!s) { location.href = "login.html"; return; }
     user = s;
     document.getElementById("studio").hidden = false;
     document.getElementById("who").textContent = "Signed in as " + (s.name || s.email);
     if (Studio.mode === "demo") document.getElementById("mode").textContent =
       "Demo mode: uploads and choices are saved in this browser only. Connect Supabase to save them for everyone.";
+    var own = CHARACTERS.filter(mine)[0];
+    current = (own || CHARACTERS[0]).slug;
     renderTabs(); load();
   });
 
@@ -67,12 +85,12 @@
 
   function renderTabs() {
     // The creator's own characters first, then the featured ones.
-    var order = CREATOR.characters.concat(CHARACTERS.map(function (c) { return c.slug; }).filter(function (s) { return CREATOR.characters.indexOf(s) < 0; }));
-    document.getElementById("tabs").innerHTML = order.map(function (s) {
-      var c = bySlug(s);
-      return '<button data-s="' + s + '" class="' + (s === current ? "on" : "") + '">' + esc(c.name) + (CREATOR.characters.indexOf(s) > -1 ? " · yours" : "") + '</button>';
-    }).join("");
-    document.querySelectorAll("#tabs button").forEach(function (b) { b.onclick = function () { current = b.dataset.s; renderTabs(); load(); }; });
+    var order = CHARACTERS.filter(mine).concat(CHARACTERS.filter(function (c) { return !mine(c); }));
+    document.getElementById("tabs").innerHTML = order.map(function (c) {
+      return '<button data-s="' + c.slug + '" class="' + (c.slug === current ? "on" : "") + '">' + esc(c.name) + (mine(c) ? " · yours" : "") + '</button>';
+    }).join("") + '<button data-new class="add">+ New character</button>';
+    document.querySelectorAll("#tabs button[data-s]").forEach(function (b) { b.onclick = function () { current = b.dataset.s; renderTabs(); load(); }; });
+    document.querySelector("#tabs [data-new]").onclick = function () { var f = document.getElementById("newchar"); f.hidden = !f.hidden; if (!f.hidden) f.name.focus(); };
   }
 
   function renderAllowance(q) {
@@ -124,6 +142,19 @@
       return Studio.upload(bySlug(current), take);
     }).then(load).catch(function (e) { document.getElementById("mode").textContent = "Upload failed: " + e.message; });
   }
+  var form = document.getElementById("newchar");
+  document.getElementById("newchar-cancel").onclick = function () { form.hidden = true; form.reset(); };
+  form.onsubmit = function (e) {
+    e.preventDefault();
+    var err = document.getElementById("newchar-err"), btn = form.querySelector("[type=submit]");
+    err.textContent = ""; btn.disabled = true;
+    var bio = form.bio.value.split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean);
+    Studio.createCharacter({ name: form.name.value.trim(), handle: form.handle.value.trim(), tagline: form.tagline.value.trim(),
+      origin: form.origin.value.trim(), category: form.category.value.trim(), bio: bio }, user)
+      .then(function (c) { form.reset(); form.hidden = true; current = c.slug; renderTabs(); load(); })
+      .catch(function (x) { err.textContent = x.message; })
+      .then(function () { btn.disabled = false; });
+  };
   var drop = document.getElementById("drop");
   document.getElementById("file").onchange = function (e) { handle(e.target.files); e.target.value = ""; };
   ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });

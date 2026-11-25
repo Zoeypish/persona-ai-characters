@@ -41,14 +41,17 @@
 <script src="store.js"></script>
 <script src="app.js"></script>
 <script>
-  var mine = CHARACTERS.filter(function (c) { return CREATOR.characters.indexOf(c.slug) > -1; });
+  var mine = [];
   document.title = CREATOR.name + " — Persona";
   document.getElementById("ava").textContent = CREATOR.name.split(" ").map(function (w) { return w[0]; }).join("");
   document.getElementById("name").textContent = CREATOR.name;
   document.getElementById("user").textContent = "@" + CREATOR.username + " · " + CREATOR.studio + " · " + CREATOR.location;
   document.getElementById("bio").textContent = CREATOR.bio;
-  document.getElementById("n").textContent = ("0" + mine.length).slice(-2);
-  Promise.all(mine.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
+  PersonaReady.then(function () {
+    mine = CHARACTERS.filter(function (c) { return CREATOR.characters.indexOf(c.slug) > -1 || c.creatorUsername === CREATOR.username; });
+    document.getElementById("n").textContent = ("0" + mine.length).slice(-2);
+    return Promise.all(mine.map(function (c) { return Studio.liveFor(c); }));
+  }).then(function (lists) {
     var total = lists.reduce(function (a, l) { return a + l.length; }, 0);
     document.getElementById("stats").innerHTML = '<span><b>' + mine.length + '</b>Character' + (mine.length === 1 ? "" : "s") + '</span>' +
       '<span><b>' + total + '</b>Live images</span><span><b>' + esc(CREATOR.joined) + '</b>Joined</span>';
