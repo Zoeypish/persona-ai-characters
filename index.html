@@ -43,13 +43,12 @@
   function render() {
     var pins = [], f = Social.following();
     var slugs = filter === "all" ? CHARACTERS.map(function (c) { return c.slug; }) : filter === "following" ? f : [filter];
-    // interleave characters so the feed feels mixed
-    var max = 0; slugs.forEach(function (s) { max = Math.max(max, (DATA[s] || []).length); });
-    for (var i = 0; i < max; i++) slugs.forEach(function (s) { var p = (DATA[s] || [])[i]; if (p) pins.push(p); });
+    slugs.forEach(function (s) { pins = pins.concat(DATA[s] || []); });
     var el = document.getElementById("pins");
     if (!pins.length) {
       el.innerHTML = '<p class="empty-pins">' + (filter === "following" ? 'Follow a character to see their pins here.' : 'Nothing live yet.') + '</p>';
-    } else el.innerHTML = pins.map(pinHtml).join("");
+      el.classList.remove("pins-cols");
+    } else layoutPins(el, pins);
     fillAvatars(el); chips();
   }
   document.getElementById("chips").onclick = function (e) {
