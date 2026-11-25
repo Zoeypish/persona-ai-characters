@@ -22,3 +22,8 @@ Import this repo in Vercel (framework preset: Other, no build command). That's i
 5. Give a creator points: `update public.creators set points = points + 10 where id = '<user id>';`
 
 Images of Lil Miquela, Imma and Aitana López belong to their creators and are shown with credit for demonstration.
+
+## Shop products (persona_products)
+1. Run `supabase/migrations/20261125_persona_products.sql` in the Supabase SQL editor.
+2. Run `data/persona_products_import_part1.sql` … `part4.sql` in order (latest ~100 items from 20 brands, linked loosely to site pins via `pin_ids`).
+3. Refresh: run the "Fetch brand products" GitHub Action; it rewrites `data/` (re-split the SQL or import `data/persona_products.csv`).

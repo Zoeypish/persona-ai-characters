@@ -1,0 +1,24 @@
+name: Fetch brand products
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/**"]
+    paths: ["scripts/fetch_shopify_products.py", ".github/workflows/fetch-products.yml"]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python3 scripts/fetch_shopify_products.py --target 20 --per-store 100
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898699+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --cached --quiet || git commit -m "Update brand product import [skip ci]"
+          git push
