@@ -29,11 +29,15 @@
 <script src="app.js"></script>
 <script>
   var slug = new URLSearchParams(location.search).get("c");
-  var c = CHARACTERS.filter(function (x) { return x.slug === slug; })[0] || CHARACTERS[0];
-  var pins = [], tab = "pins";
-  document.title = c.name + " · Persona";
+  var c = null, pins = [], tab = "pins";
   function fact(k, v) { return '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'; }
   function render() {
+    if (!c) {
+      document.getElementById("main").innerHTML = '<section class="phead"><h1>Not found</h1><p class="ptag">There is no character at this address.</p>' +
+        '<p class="center"><a class="pill dark" href="./">Explore characters</a></p></section>';
+      return;
+    }
+    document.title = c.name + " · Persona";
     var creatorHtml = c.creatorUsername ? '<a href="creator.html" class="ulink">' + esc(c.creator) + '</a>' : esc(c.creator);
     var body = tab === "pins"
       ? (pins.length ? '<div class="pins">' + pins.map(pinHtml).join("") + '</div>' : '<p class="empty-pins">No images live yet. The creator picks what goes live in the Studio.</p>')
@@ -58,8 +62,11 @@
     fillAvatars(document.getElementById("main"));
     document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { tab = b.dataset.tab; render(); }; });
   }
-  render();
-  loadAllLive().then(function (d) { pins = d[c.slug] || []; render(); });
+  loadAllLive().then(function (d) {
+    c = slug ? charBySlug(slug) : CHARACTERS[0];
+    if (c) pins = d[c.slug] || [];
+    render();
+  });
 </script>
 </body>
 </html>

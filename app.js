@@ -17,7 +17,6 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
 (function header() {
   var el = document.getElementById("nav");
   if (!el) return;
-  var opts = CHARACTERS.map(function (c) { return '<option value="' + esc(c.name) + '">'; }).join("");
   el.className = "nav";
   el.innerHTML =
     '<a class="wordmark" href="./" aria-label="Persona home">' + MARK + '<span>Persona</span></a>' +
@@ -25,12 +24,15 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
       '<form class="search" role="search" id="search-form">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
         '<input id="search" type="search" placeholder="Search characters, looks, creators" list="search-list" autocomplete="off" aria-label="Search characters">' +
-        '<datalist id="search-list">' + opts + '</datalist>' +
+        '<datalist id="search-list"></datalist>' +
       '</form>' +
       '<a class="nav-saved" href="saved.html" aria-label="Saved">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Saved</span></a>' +
       '<a class="avatar" href="studio.html" title="' + esc(CREATOR.name) + '" aria-label="Your profile and studio">' +
         esc(CREATOR.name.split(" ").map(function (w) { return w[0]; }).join("")) + '</a>' +
     '</div>';
+  window.PersonaReady.then(function () {
+    document.getElementById("search-list").innerHTML = CHARACTERS.map(function (c) { return '<option value="' + esc(c.name) + '">'; }).join("");
+  });
   document.getElementById("search-form").onsubmit = function (e) {
     e.preventDefault();
     var q = document.getElementById("search").value.trim().toLowerCase();
@@ -141,7 +143,7 @@ document.addEventListener("click", function (e) {
 // Pin closeup
 function openPin(id) {
   var p = PINS[id]; if (!p) return;
-  var c = charBySlug(p.slug), saved = Social.isSaved(p.id);
+  var c = charBySlug(p.slug) || { name: "", creator: "", slug: p.slug }, saved = Social.isSaved(p.id);
   var credit = p.creditUrl ? 'Image via <a href="' + p.creditUrl + '" target="_blank" rel="noopener">' + esc(p.credit) + '</a> · © ' + esc(c.creator) : (p.credit ? esc(p.credit) : "");
   var box = document.getElementById("closeup") || document.body.appendChild(Object.assign(document.createElement("div"), { id: "closeup", className: "closeup" }));
   box.innerHTML =
@@ -171,7 +173,7 @@ document.addEventListener("keydown", function (e) { if (e.key === "Escape") clos
 
 // Load every character's live images once; pages render from this.
 function loadAllLive() {
-  return Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
+  return window.PersonaReady.then(function () { return Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); })); }).then(function (lists) {
     var out = {};
     lists.forEach(function (l, i) { var c = CHARACTERS[i]; out[c.slug] = l.map(function (im) { return toPin(c, im); }); if (l[0]) AVATARS[c.slug] = l[0].src; });
     return out;

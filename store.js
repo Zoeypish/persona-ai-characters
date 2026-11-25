@@ -54,6 +54,36 @@
     return builtIn.concat(ups);
   }
 
+  // Supabase mode with the characters table: the feed is exactly the DB rows (featured files + uploads).
+  function fromRows(c, rows) {
+    return rows.map(function (r) {
+      var im = r.url ? uploadedImg(r, c)
+        : { id: r.id, src: window.IMAGE_BASE + r.id + ".jpg", alt: c.name + ", image " + r.id.split("-").pop(), credit: r.credit, creditUrl: r.credit_url,
+            created: Date.parse(r.created_at) || 0 };
+      im.live = !!r.live; im.position = r.position == null ? 1000 : r.position; return im;
+    }).sort(function (a, b) { return a.position - b.position || a.created - b.created; });
+  }
+
+  // ---------- characters ----------
+  var LOCAL_CHARS = "persona-characters-v1";
+  function fromDb(r) {
+    return { slug: r.slug, name: r.name, handle: r.handle || "", link: r.link || "", tagline: r.tagline || "", origin: r.origin || "",
+      creator: r.creator || "", creatorUsername: r.creator_username || undefined, since: r.since || "", audience: r.audience || "",
+      category: r.category || "", bio: r.bio || [], knownFor: r.known_for || [], owner: r.owner, published: r.published };
+  }
+  function toDb(c) {
+    return { slug: c.slug, name: c.name, handle: c.handle || null, link: c.link || null, tagline: c.tagline || null, origin: c.origin || null,
+      creator: c.creator || null, since: c.since || null, audience: c.audience || null, category: c.category || null,
+      bio: c.bio || [], known_for: c.knownFor || [] };
+  }
+  function slugify(s) {
+    return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+  function addLocal(list) {
+    (readJSON(LOCAL_CHARS) || []).forEach(function (c) { if (!list.some(function (x) { return x.slug === c.slug; })) list.push(c); });
+    return list;
+  }
+
   function rowsFor(c) {
     if (sb) {
       return sb.from("images").select("*").eq("character_slug", c.slug)
@@ -70,7 +100,12 @@
 
   window.Studio = {
     mode: sb ? "supabase" : "demo",
-    all: function (c) { return rowsFor(c).then(function (rows) { return merge(c, rows); }); },
+    fromDb: false, // true once characters were read from the characters table
+    all: function (c) {
+      if (sb && Studio.fromDb) return sb.from("images").select("*").eq("character_slug", c.slug)
+        .then(function (r) { return r.error ? [] : fromRows(c, r.data); });
+      return rowsFor(c).then(function (rows) { return merge(c, rows); });
+    },
     liveFor: function (c) { return Studio.all(c).then(function (l) { return l.filter(function (im) { return im.live; }); }); },
 
     setLive: function (c, id, on) {
@@ -105,6 +140,44 @@
       }
       var m = readJSON(LIVE_KEY) || {}; delete m[im.id]; writeJSON(LIVE_KEY, m);
       return tx("readwrite", function (st) { st.delete(im.id); });
+    },
+
+    // Characters come from the DB when it has them; otherwise from data.js (plus demo ones in this browser).
+    loadCharacters: function () {
+      var fallback = function () { window.CHARACTERS = addLocal(window.CHARACTERS.slice()); return window.CHARACTERS; };
+      if (!sb) return Promise.resolve(fallback());
+      return sb.from("characters").select("*").order("sort").order("created_at").then(function (r) {
+        if (r.error || !r.data || !r.data.length) {
+          if (r.error) console.warn("characters table not readable, using data.js:", r.error.message);
+          return fallback();
+        }
+        Studio.fromDb = true;
+        window.CHARACTERS = r.data.map(fromDb);
+        return window.CHARACTERS;
+      }, fallback);
+    },
+    slugify: slugify,
+    isMine: function (c, user) {
+      if (!user) return false;
+      if (sb && Studio.fromDb) return !!c.owner && c.owner === user.id;
+      return (window.CREATOR.characters || []).indexOf(c.slug) > -1 || !!c.local;
+    },
+    createCharacter: function (fields, user) {
+      var c = Object.assign({ bio: [], knownFor: [] }, fields);
+      c.slug = slugify(c.slug || c.name);
+      if (!c.name || !c.slug) return Promise.reject(new Error("Give the character a name."));
+      if (window.CHARACTERS.some(function (x) { return x.slug === c.slug; })) return Promise.reject(new Error("A character called " + c.name + " already exists."));
+      c.creator = c.creator || (user && user.name) || "";
+      if (sb && Studio.fromDb) {
+        return sb.from("characters").insert(Object.assign(toDb(c), { owner: user.id, sort: 100 })).select().single().then(function (r) {
+          if (r.error) throw new Error(r.error.code === "23505" ? "That name is taken. Try another." : r.error.message);
+          var row = fromDb(r.data); window.CHARACTERS.push(row); return row;
+        });
+      }
+      if (sb) return Promise.reject(new Error("Run supabase/characters.sql in Supabase first, then reload."));
+      c.local = true; c.builtIn = 0; c.since = c.since || String(new Date().getFullYear()); c.audience = c.audience || "New on Persona";
+      var list = readJSON(LOCAL_CHARS) || []; list.push(c); writeJSON(LOCAL_CHARS, list);
+      window.CHARACTERS.push(c); return Promise.resolve(c);
     },
 
     // ---------- login (Google only) ----------
@@ -151,4 +224,6 @@
     // Demo only: lets you show the points rule live.
     addDemoPoints: function (n) { writeJSON("persona-points-v1", (readJSON("persona-points-v1") || 0) + n); },
   };
+  // Every page waits on this before reading CHARACTERS.
+  window.PersonaReady = Studio.loadCharacters();
 })();
