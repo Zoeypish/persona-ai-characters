@@ -37,6 +37,7 @@
 
   <div class="studio-bar"><span id="count"></span><span>Switch on to publish</span></div>
   <div class="sgrid" id="grid"></div>
+  <p class="empty" id="none" hidden>Your account doesn't have a character yet. Once your character is set up and linked to this Google account, you'll manage its images here.</p>
   <p class="note" id="mode"></p>
 </main>
 <footer>
@@ -50,7 +51,7 @@
 <script src="store.js"></script>
 <script src="app.js"></script>
 <script>
-  var current = CREATOR.characters[0], user = null;
+  var current = null, user = null, mine = [];
   function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
 
   Studio.session().then(function (s) {
@@ -60,17 +61,26 @@
     document.getElementById("who").textContent = "Signed in as " + (s.name || s.email);
     if (Studio.mode === "demo") document.getElementById("mode").textContent =
       "Demo mode: uploads and choices are saved in this browser only. Connect Supabase to save them for everyone.";
-    renderTabs(); load();
+    return Studio.myCharacters().then(function (list) {
+      mine = list.filter(bySlug);
+      if (!mine.length) {
+        ["allowance", "tabs", "drop", "grid"].forEach(function (id) { document.getElementById(id).hidden = true; });
+        document.querySelector(".studio-bar").hidden = true;
+        document.getElementById("view").hidden = true;
+        document.getElementById("none").hidden = false;
+        return;
+      }
+      current = mine[0]; renderTabs(); load();
+    });
   });
 
   document.getElementById("out").onclick = function () { Studio.signOut().then(function () { location.href = "./"; }); };
 
   function renderTabs() {
-    // The creator's own characters first, then the featured ones.
-    var order = CREATOR.characters.concat(CHARACTERS.map(function (c) { return c.slug; }).filter(function (s) { return CREATOR.characters.indexOf(s) < 0; }));
-    document.getElementById("tabs").innerHTML = order.map(function (s) {
+    // Only the characters this account owns.
+    document.getElementById("tabs").innerHTML = mine.map(function (s) {
       var c = bySlug(s);
-      return '<button data-s="' + s + '" class="' + (s === current ? "on" : "") + '">' + esc(c.name) + (CREATOR.characters.indexOf(s) > -1 ? " · yours" : "") + '</button>';
+      return '<button data-s="' + s + '" class="' + (s === current ? "on" : "") + '">' + esc(c.name) + '</button>';
     }).join("");
     document.querySelectorAll("#tabs button").forEach(function (b) { b.onclick = function () { current = b.dataset.s; renderTabs(); load(); }; });
   }
