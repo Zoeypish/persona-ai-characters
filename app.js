@@ -28,9 +28,17 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
         '<datalist id="search-list">' + opts + '</datalist>' +
       '</form>' +
       '<a class="nav-saved" href="saved.html" aria-label="Saved">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Saved</span></a>' +
-      '<a class="avatar" href="studio.html" title="' + esc(CREATOR.name) + '" aria-label="Your profile and studio">' +
-        esc(CREATOR.name.split(" ").map(function (w) { return w[0]; }).join("")) + '</a>' +
+      '<a class="nav-signin" id="nav-me" href="login.html">Sign in</a>' +
     '</div>';
+  // Show who is actually signed in: their Google photo (or initials) linking to the Studio, otherwise "Sign in".
+  if (window.Studio) Studio.session().then(function (u) {
+    var me = document.getElementById("nav-me");
+    if (!u || !me) return;
+    var name = u.name || u.email || "";
+    var initials = name.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join("");
+    me.className = "avatar"; me.href = "studio.html"; me.title = name; me.setAttribute("aria-label", "Your studio (" + name + ")");
+    me.innerHTML = u.avatar ? '<img src="' + esc(u.avatar) + '" alt="" referrerpolicy="no-referrer">' : esc(initials || "?");
+  }).catch(function () {});
   document.getElementById("search-form").onsubmit = function (e) {
     e.preventDefault();
     var q = document.getElementById("search").value.trim().toLowerCase();

@@ -116,6 +116,15 @@
       });
       return Promise.resolve(readJSON(SESSION_KEY));
     },
+    // Slugs of the characters this account may manage. Set by the site owner in Supabase (creators.characters).
+    myCharacters: function () {
+      if (sb) return Studio.session().then(function (u) {
+        if (!u) return [];
+        return sb.from("creators").select("characters").eq("id", u.id).maybeSingle()
+          .then(function (r) { return (r.data && r.data.characters) || []; });
+      });
+      return Studio.session().then(function (u) { return u ? CREATOR.characters.slice() : []; });
+    },
     signInWithGoogle: function () {
       if (sb) return sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, "") + "studio.html" } });
       writeJSON(SESSION_KEY, { id: "demo", email: "noor@persona.demo", name: CREATOR.name });
