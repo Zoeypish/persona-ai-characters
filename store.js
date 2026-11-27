@@ -11,6 +11,11 @@
     catch (e) { console.warn("Supabase disabled:", e); sb = null; }
   }
   var BUCKET = "character-images";
+  // Demo mode is only for trying the site on your own computer. On the real site, if Supabase can't load,
+  // say so instead of quietly signing people in as the demo creator.
+  var isLocal = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || location.protocol === "file:";
+  var mode = sb ? "supabase" : (isLocal ? "demo" : "error");
+  if (mode !== "demo") { try { localStorage.removeItem("persona-session-v1"); } catch (e) {} }
 
   // ---------- demo storage ----------
   var DB = "persona-studio", STORE = "uploads", LIVE_KEY = "persona-live-v1", SESSION_KEY = "persona-session-v1";
@@ -69,7 +74,7 @@
   }
 
   window.Studio = {
-    mode: sb ? "supabase" : "demo",
+    mode: mode,
     all: function (c) { return rowsFor(c).then(function (rows) { return merge(c, rows); }); },
     liveFor: function (c) { return Studio.all(c).then(function (l) { return l.filter(function (im) { return im.live; }); }); },
 
@@ -114,7 +119,7 @@
         var m = s.user.user_metadata || {};
         return { id: s.user.id, email: s.user.email, name: m.full_name || m.name || s.user.email, avatar: m.avatar_url };
       });
-      return Promise.resolve(readJSON(SESSION_KEY));
+      return Promise.resolve(mode === "demo" ? readJSON(SESSION_KEY) : null);
     },
     // Slugs of the characters this account may manage. Set by the site owner in Supabase (creators.characters).
     myCharacters: function () {
@@ -127,6 +132,7 @@
     },
     signInWithGoogle: function () {
       if (sb) return sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, "") + "studio.html" } });
+      if (mode === "error") return Promise.reject(new Error("Sign-in couldn't load. Please refresh the page and try again."));
       writeJSON(SESSION_KEY, { id: "demo", email: "noor@persona.demo", name: CREATOR.name });
       location.href = "studio.html";
       return Promise.resolve();
