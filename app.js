@@ -68,7 +68,7 @@ var Social = (function () {
 
 function charBySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
 function absUrl(src) { try { return new URL(src, location.href).href; } catch (e) { return src; } }
-// "Shop the look": visual search for the products in the image.
+// Fallback for "Shop the look": a visual search for the products in the image.
 function shopUrl(pin) {
   var c = charBySlug(pin.slug) || {};
   if (/^https?:/.test(absUrl(pin.src)) && !/^blob:/.test(pin.src) && !/localhost|127\.0\.0\.1/.test(location.host))
@@ -97,7 +97,7 @@ function pinHtml(p, i) {
       '<img src="' + p.src + '" alt="' + esc(p.alt) + '" loading="lazy" onload="this.classList.add(\'loaded\')">' +
       '<div class="pin-over">' +
         '<button class="save-btn' + (saved ? " on" : "") + '" data-save="' + esc(p.id) + '">' + (saved ? "Saved" : "Save") + '</button>' +
-        '<a class="shop-btn" href="' + shopUrl(p) + '" target="_blank" rel="noopener" data-stop>' + ICON.bag + 'Shop</a>' +
+        '<button class="shop-btn" data-shop="' + esc(p.id) + '">' + ICON.bag + 'Shop</button>' +
       '</div>' +
     '</div>' +
     '<a class="pin-meta" href="profile.html?c=' + p.slug + '"><span class="mini-ava" data-ava="' + p.slug + '"></span>' + esc(c.name) + '</a>' +
@@ -117,9 +117,16 @@ function fillAvatars(root) {
 
 // One delegated handler for save / follow / open, on every page.
 document.addEventListener("click", function (e) {
-  var t = e.target.closest("[data-save],[data-follow],[data-open],[data-stop],[data-close]");
+  var t = e.target.closest("[data-save],[data-follow],[data-open],[data-stop],[data-close],[data-shop]");
   if (!t) return;
   if (t.hasAttribute("data-stop")) { e.stopPropagation(); return; }
+  if (t.hasAttribute("data-shop")) {
+    e.preventDefault(); e.stopPropagation();
+    if (!document.getElementById("closeup") || !document.getElementById("closeup").classList.contains("open")) openPin(t.dataset.shop);
+    var list = document.getElementById("shop-list");
+    if (list) list.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return;
+  }
   if (t.hasAttribute("data-save")) {
     e.preventDefault(); e.stopPropagation();
     var on = Social.toggleSave(PINS[t.dataset.save]);
@@ -150,7 +157,7 @@ function openPin(id) {
       '<div class="closeup-img"><img src="' + p.src + '" alt="' + esc(p.alt) + '"></div>' +
       '<div class="closeup-side">' +
         '<div class="closeup-actions">' +
-          '<a class="shop-btn big" href="' + shopUrl(p) + '" target="_blank" rel="noopener">' + ICON.bag + 'Shop the look</a>' +
+          '<button class="shop-btn big" data-shop="' + esc(p.id) + '">' + ICON.bag + 'Shop the look</button>' +
           '<button class="save-btn big' + (saved ? " on" : "") + '" data-save="' + esc(p.id) + '">' + (saved ? "Saved" : "Save") + '</button>' +
         '</div>' +
         '<div class="eyebrow">' + esc(c.category) + '</div>' +
@@ -158,12 +165,38 @@ function openPin(id) {
         '<p class="closeup-tag">' + esc(c.tagline) + '</p>' +
         '<div class="closeup-who"><a href="profile.html?c=' + c.slug + '" class="who"><span class="mini-ava lg" data-ava="' + c.slug + '"></span><span><b>' + esc(c.name) + '</b><small>by ' + esc(c.creator) + '</small></span></a>' + followBtn(c.slug) + '</div>' +
         (credit ? '<p class="closeup-credit">' + credit + '</p>' : '') +
+        '<section class="shop-list" id="shop-list" aria-label="Shop the look"></section>' +
         '<a class="ulink closeup-more" href="profile.html?c=' + c.slug + '">See all of ' + esc(c.name) + ' →</a>' +
       '</div>' +
     '</div>';
   fillAvatars(box);
+  renderShop(p);
   box.classList.add("open");
   document.body.style.overflow = "hidden";
+}
+// Products matched to this image. Falls back to a visual search when there are none (or no Supabase).
+function money(n, cur) {
+  if (n == null || n === "") return "";
+  try { return new Intl.NumberFormat(undefined, { style: "currency", currency: cur || "USD", maximumFractionDigits: n % 1 ? 2 : 0 }).format(n); }
+  catch (e) { return "$" + n; }
+}
+function renderShop(p) {
+  var el = document.getElementById("shop-list"); if (!el) return;
+  var lens = '<a class="shop-more" href="' + shopUrl(p) + '" target="_blank" rel="noopener">Find more like this with Google Lens →</a>';
+  el.innerHTML = '<h3>Shop the look</h3><p class="shop-note">Loading pieces…</p>';
+  (window.Products ? Products.forPin(p.id) : Promise.resolve([])).then(function (items) {
+    if (el !== document.getElementById("shop-list")) return;
+    if (!items.length) { el.innerHTML = '<h3>Shop the look</h3>' + lens; return; }
+    el.innerHTML = '<h3>Shop the look</h3><p class="shop-note">Similar pieces from brands we love</p>' +
+      '<div class="shop-grid">' + items.map(function (it) {
+        var price = it.on_sale
+          ? '<b class="sale">' + money(it.sale_price, it.currency) + '</b> <s>' + money(it.price, it.currency) + '</s>'
+          : '<b>' + money(it.price, it.currency) + '</b>';
+        return '<a class="product" href="' + esc(it.link) + '" target="_blank" rel="noopener">' +
+          '<span class="product-img">' + (it.image ? '<img src="' + esc(it.image) + '" alt="" loading="lazy">' : '') + '</span>' +
+          '<small>' + esc(it.store) + '</small><span class="product-title">' + esc(it.title) + '</span><span class="product-price">' + price + '</span></a>';
+      }).join("") + '</div>' + lens;
+  });
 }
 function closePin() { var b = document.getElementById("closeup"); if (b) b.classList.remove("open"); document.body.style.overflow = ""; }
 document.addEventListener("click", function (e) { if (e.target.id === "closeup") closePin(); });

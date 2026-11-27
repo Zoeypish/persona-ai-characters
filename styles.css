@@ -265,7 +265,7 @@ footer a { text-decoration: underline; text-underline-offset: 2px; }
 .closeup.open { display: grid; }
 .closeup-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: min(1016px, 100%);
   background: #fff; border-radius: 32px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
-.closeup-img { background: var(--tile); }
+.closeup-img { background: var(--tile); align-self: start; position: sticky; top: 0; }
 .closeup-img img { height: auto; max-height: 86vh; object-fit: cover; }
 .closeup-side { padding: 32px; display: flex; flex-direction: column; gap: 14px; }
 .closeup-actions { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 8px; }
@@ -282,6 +282,21 @@ footer a { text-decoration: underline; text-underline-offset: 2px; }
 .closeup-credit { font-size: 12px; color: var(--muted); }
 .closeup-credit a { text-decoration: underline; text-underline-offset: 2px; }
 .closeup-more { margin-top: auto; font-size: 14px; }
+.shop-list { border-bottom: 1px solid var(--line); padding-bottom: 16px; scroll-margin-top: 24px; }
+.shop-list h3 { font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.1; }
+.shop-note { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.shop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px; margin-top: 12px; }
+.product { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; }
+.product-img { display: block; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: var(--tile); margin-bottom: 6px; }
+.product-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .25s; }
+.product:hover .product-img img { transform: scale(1.04); }
+.product small { color: var(--muted); font-size: 12px; }
+.product-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.product-price .sale { color: #c0392b; font-weight: 600; }
+.product-price s { color: var(--muted); }
+.shop-more { display: inline-block; margin-top: 14px; font-size: 13px; text-decoration: underline; text-underline-offset: 2px; color: var(--muted); }
+button.shop-btn { border: 0; cursor: pointer; }
+@media (max-width: 640px) { .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .closeup-x { position: absolute; top: 14px; left: 14px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #fff; cursor: pointer;
   display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
 .closeup-x svg { width: 18px; height: 18px; stroke: var(--ink); stroke-width: 2; fill: none; }
