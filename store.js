@@ -151,4 +151,19 @@
     // Demo only: lets you show the points rule live.
     addDemoPoints: function (n) { writeJSON("persona-points-v1", (readJSON("persona-points-v1") || 0) + n); },
   };
+
+  // ---------- "Shop the look": brand products matched to each image (persona_products.pin_ids) ----------
+  var productCache = {};
+  window.Products = {
+    forPin: function (id) {
+      if (!sb || !id) return Promise.resolve([]);
+      if (!productCache[id]) {
+        productCache[id] = sb.from("persona_products")
+          .select("id,store,title,price,sale_price,currency,link,image,on_sale")
+          .contains("pin_ids", [id]).eq("available", true).limit(12)
+          .then(function (r) { return r.error ? [] : r.data || []; }, function () { return []; });
+      }
+      return productCache[id];
+    },
+  };
 })();
