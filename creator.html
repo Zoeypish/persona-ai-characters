@@ -17,22 +17,19 @@
   <section class="creator-head">
     <div class="big-avatar" id="ava"></div>
     <div>
-      <div class="eyebrow">Creator</div>
       <h1 id="name"></h1>
       <div class="user" id="user"></div>
-      <p id="bio"></p>
       <div class="stats" id="stats"></div>
     </div>
     <a class="btn ghost" href="studio.html">Open Studio</a>
   </section>
   <section class="section">
-    <div class="section-head"><h2>Characters</h2><span id="n"></span></div>
     <div class="roster" id="roster"></div>
   </section>
 </main>
 <footer>
-  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
-  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a></span>
+  <span>Images © their creators.</span>
 </footer>
 <script src="vendor/supabase-js-2.119.0.js"></script>
 <script src="config.js"></script>
@@ -46,8 +43,6 @@
   document.getElementById("ava").textContent = CREATOR.name.split(" ").map(function (w) { return w[0]; }).join("");
   document.getElementById("name").textContent = CREATOR.name;
   document.getElementById("user").textContent = "@" + CREATOR.username + " · " + CREATOR.studio + " · " + CREATOR.location;
-  document.getElementById("bio").textContent = CREATOR.bio;
-  document.getElementById("n").textContent = ("0" + mine.length).slice(-2);
   Promise.all(mine.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
     var total = lists.reduce(function (a, l) { return a + l.length; }, 0);
     document.getElementById("stats").innerHTML = '<span><b>' + mine.length + '</b>Character' + (mine.length === 1 ? "" : "s") + '</span>' +
@@ -55,7 +50,7 @@
     document.getElementById("roster").innerHTML = mine.map(function (c, i) {
       var cover = lists[i][0];
       return '<a class="card" href="profile.html?c=' + c.slug + '"><div class="tile">' + (cover ? tileImg(cover, c.name) : '<div class="ph">' + c.name[0] + '</div>') + '</div>' +
-        '<div class="card-meta"><h3>' + esc(c.name) + '</h3><span>' + lists[i].length + ' live</span></div><p>' + esc(c.tagline) + '</p></a>';
+        '<div class="card-meta"><h3>' + esc(c.name) + '</h3><span>' + lists[i].length + ' images</span></div></a>';
     }).join("");
   });
 </script>

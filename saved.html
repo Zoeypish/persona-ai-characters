@@ -17,15 +17,14 @@
 <main>
   <section class="phead">
     <h1>Saved</h1>
-    <p class="ptag">Your saved looks and the characters you follow. Kept on this device.</p>
     <div class="ptabs"><button data-tab="pins" class="on">Pins</button><button data-tab="following">Following</button></div>
   </section>
   <section class="feed" id="body"></section>
 </main>
 
 <footer>
-  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
-  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a></span>
+  <span>Images © their creators.</span>
 </footer>
 
 <script src="vendor/supabase-js-2.119.0.js"></script>
@@ -40,8 +39,9 @@
     var el = document.getElementById("body");
     if (tab === "pins") {
       var s = Social.saved();
-      el.innerHTML = s.length ? '<div class="pins">' + s.map(pinHtml).join("") + '</div>'
-        : '<p class="empty-pins">Nothing saved yet. Tap Save on any image to keep it here.</p><p class="center"><a class="pill dark" href="./">Explore</a></p>';
+      el.innerHTML = s.length ? '<div class="pins" id="pins"></div>'
+        : '<p class="empty-pins">Nothing saved yet.</p><p class="center"><a class="pill dark" href="./">Explore</a></p>';
+      if (s.length) layoutPins(document.getElementById("pins"), s);
     } else {
       var f = Social.following().map(charBySlug).filter(Boolean);
       el.innerHTML = f.length ? '<div class="follow-list">' + f.map(function (c) {

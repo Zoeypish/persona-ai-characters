@@ -96,20 +96,37 @@ function followBtn(slug, extra) {
 }
 
 // pins: [{id, slug, src, alt, credit, creditUrl}]
+// Image-first: each pin shows the whole image at its real shape (no cropping), with no caption underneath.
+// The character's name only appears on top of the image, on hover.
 var PINS = {};
 function pinHtml(p, i) {
   PINS[p.id] = p;
-  var c = charBySlug(p.slug) || { name: "" }, saved = Social.isSaved(p.id);
+  var c = charBySlug(p.slug) || { name: "" }, saved = Social.isSaved(p.id), ar = RATIO[p.src];
   return '<div class="pin" data-id="' + esc(p.id) + '">' +
-    '<div class="pin-media r' + (i % 5) + '" data-open="' + esc(p.id) + '">' +
-      '<img src="' + p.src + '" alt="' + esc(p.alt) + '" loading="lazy" onload="this.classList.add(\'loaded\')">' +
+    '<div class="pin-media' + (ar ? '' : ' r' + (i % 5)) + '" data-open="' + esc(p.id) + '"' + (ar ? ' style="aspect-ratio:1/' + ar.toFixed(4) + '"' : '') + '>' +
+      '<img src="' + p.src + '" alt="' + esc(p.alt) + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')">' +
       '<div class="pin-over">' +
         '<button class="save-btn' + (saved ? " on" : "") + '" data-save="' + esc(p.id) + '">' + (saved ? "Saved" : "Save") + '</button>' +
-        '<button class="shop-btn" data-shop="' + esc(p.id) + '">' + ICON.bag + 'Shop</button>' +
+        '<div class="pin-foot">' +
+          '<a class="pin-who" href="profile.html?c=' + p.slug + '" data-stop><span class="mini-ava" data-ava="' + p.slug + '"></span>' + esc(c.name) + '</a>' +
+          '<button class="shop-btn" data-shop="' + esc(p.id) + '" aria-label="Shop the look">' + ICON.bag + '</button>' +
+        '</div>' +
       '</div>' +
     '</div>' +
-    '<a class="pin-meta" href="profile.html?c=' + p.slug + '"><span class="mini-ava" data-ava="' + p.slug + '"></span>' + esc(c.name) + '</a>' +
   '</div>';
+}
+
+// Real shape of each image (height / width), measured once so nothing gets cropped or zoomed.
+var RATIO = {};
+function measurePins(pins) {
+  return Promise.all(pins.map(function (p) {
+    if (RATIO[p.src]) return null;
+    return new Promise(function (done) {
+      var im = new Image(), t = setTimeout(fin, 4000);
+      function fin() { clearTimeout(t); if (im.naturalWidth) RATIO[p.src] = im.naturalHeight / im.naturalWidth; done(); }
+      im.onload = im.onerror = fin; im.src = p.src;
+    });
+  }));
 }
 
 function toPin(c, im) { return { id: im.id, slug: c.slug, src: im.src, alt: im.alt, credit: im.credit, creditUrl: im.creditUrl }; }
@@ -168,13 +185,9 @@ function openPin(id) {
           '<button class="shop-btn big" data-shop="' + esc(p.id) + '">' + ICON.bag + 'Shop the look</button>' +
           '<button class="save-btn big' + (saved ? " on" : "") + '" data-save="' + esc(p.id) + '">' + (saved ? "Saved" : "Save") + '</button>' +
         '</div>' +
-        '<div class="eyebrow">' + esc(c.category) + '</div>' +
-        '<h2>' + esc(c.name) + '</h2>' +
-        '<p class="closeup-tag">' + esc(c.tagline) + '</p>' +
         '<div class="closeup-who"><a href="profile.html?c=' + c.slug + '" class="who"><span class="mini-ava lg" data-ava="' + c.slug + '"></span><span><b>' + esc(c.name) + '</b><small>by ' + esc(c.creator) + '</small></span></a>' + followBtn(c.slug) + '</div>' +
         (credit ? '<p class="closeup-credit">' + credit + '</p>' : '') +
         '<section class="shop-list" id="shop-list" aria-label="Shop the look"></section>' +
-        '<a class="ulink closeup-more" href="profile.html?c=' + c.slug + '">See all of ' + esc(c.name) + ' →</a>' +
       '</div>' +
     '</div>';
   fillAvatars(box);
@@ -190,19 +203,19 @@ function money(n, cur) {
 }
 function renderShop(p) {
   var el = document.getElementById("shop-list"); if (!el) return;
-  var lens = '<a class="shop-more" href="' + shopUrl(p) + '" target="_blank" rel="noopener">Find more like this with Google Lens →</a>';
-  el.innerHTML = '<h3>Shop the look</h3><p class="shop-note">Loading pieces…</p>';
+  var lens = '<a class="shop-more" href="' + shopUrl(p) + '" target="_blank" rel="noopener">More like this →</a>';
+  el.innerHTML = '<h3>Shop the look</h3>';
   (window.Products ? Products.forPin(p.id) : Promise.resolve([])).then(function (items) {
     if (el !== document.getElementById("shop-list")) return;
     if (!items.length) { el.innerHTML = '<h3>Shop the look</h3>' + lens; return; }
-    el.innerHTML = '<h3>Shop the look</h3><p class="shop-note">Similar pieces from brands we love</p>' +
+    el.innerHTML = '<h3>Shop the look</h3>' +
       '<div class="shop-grid">' + items.map(function (it) {
         var price = it.on_sale
           ? '<b class="sale">' + money(it.sale_price, it.currency) + '</b> <s>' + money(it.price, it.currency) + '</s>'
           : '<b>' + money(it.price, it.currency) + '</b>';
         return '<a class="product" href="' + esc(it.link) + '" target="_blank" rel="noopener">' +
-          '<span class="product-img">' + (it.image ? '<img src="' + esc(it.image) + '" alt="" loading="lazy">' : '') + '</span>' +
-          '<small>' + esc(it.store) + '</small><span class="product-title">' + esc(it.title) + '</span><span class="product-price">' + price + '</span></a>';
+          '<span class="product-img" title="' + esc(it.title) + '">' + (it.image ? '<img src="' + esc(it.image) + '" alt="" loading="lazy">' : '') + '</span>' +
+          '<span class="product-price">' + price + '</span><small>' + esc(it.store) + '</small></a>';
       }).join("") + '</div>' + lens;
   });
 }
@@ -219,23 +232,35 @@ function loadAllLive() {
   });
 }
 
-// ---------- Mixed masonry: no two pins from the same character touch ----------
-// Builds explicit columns so we control neighbours both above/below and side by side.
-var RATIOS = [1.5, 4 / 3, 1.25, 16 / 9, 1]; // height / width for r0..r4
-function layoutPins(el, pins) {
-  var w = el.clientWidth || window.innerWidth, gap = w < 820 ? 10 : 16;
-  var cols = w < 820 ? 2 : Math.min(6, Math.max(2, Math.floor((w + gap) / (220 + gap))));
-  var colW = (w - gap * (cols - 1)) / cols, pad = 80 / colW, meta = (w < 820 ? 50 : 56) / colW; // caption + bottom margin
+// ---------- Masonry with big images ----------
+// Few, wide columns so every image is large. On the homepage no two pins from the same character
+// touch (side by side or stacked). Pass {mixed:false} on single-character pages to skip that rule.
+function colCount(w) { return w < 560 ? 1 : w < 900 ? 2 : Math.min(4, Math.max(2, Math.floor((w + 20) / (320 + 20)))); }
+function layoutPins(el, pins, opts) {
+  opts = opts || {};
+  el._pins = pins; el._opts = opts;
+  if (!el._resize) {
+    el._resize = function () { var c2 = colCount(el.clientWidth); if (c2 !== el._cols) layoutPins(el, el._pins, el._opts); };
+    window.addEventListener("resize", el._resize);
+  }
+  return measurePins(pins).then(function () { if (el._pins === pins) drawPins(el, pins, opts); });
+}
+function drawPins(el, pins, opts) {
+  var mixed = opts.mixed !== false;
+  var w = el.clientWidth || window.innerWidth, cols = colCount(w), gap = w < 900 ? 12 : 20;
+  var colW = (w - gap * (cols - 1)) / cols, pad = 80 / colW, meta = gap / colW;
   var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  function ratio(p) { return RATIO[p.src] || 1.25; }
   function attempt(shuffle) {
     var pool = {}, order = [];
-    pins.forEach(function (p, i) {
-      var r = shuffle ? Math.floor(rnd() * 5) : i % 5;
-      (pool[p.slug] = pool[p.slug] || []).push({ p: p, r: r });
-      if (order.indexOf(p.slug) < 0) order.push(p.slug);
+    pins.forEach(function (p) {
+      var key = mixed ? p.slug : "all";
+      (pool[key] = pool[key] || []).push(p);
+      if (order.indexOf(key) < 0) order.push(key);
     });
     var col = [], total = 0; for (var k = 0; k < cols; k++) col.push({ h: 0, items: [] });
     function clash(slug, c, top, bot) {
+      if (!mixed) return 0;
       var n = 0, me = col[c].items[col[c].items.length - 1];
       if (me && me.slug === slug) n += 20;                      // directly above
       [c - 1, c + 1].forEach(function (j) {
@@ -252,32 +277,23 @@ function layoutPins(el, pins) {
       var best = null;
       order.forEach(function (s) {
         var q = pool[s]; if (!q.length) return;
-        var top = col[c].h, bot = top + RATIOS[q[0].r] + meta, cl = clash(s, c, top, bot);
+        var top = col[c].h, bot = top + ratio(q[0]) + meta, cl = clash(s, c, top, bot);
         var score = cl * 100 - q.length + (shuffle ? rnd() * 0.5 : 0);
-        if (!best || score < best.score) best = { score: score, cl: cl, s: s, it: q[0], top: top, bot: bot };
+        if (!best || score < best.score) best = { score: score, cl: cl, s: s, p: q[0], top: top, bot: bot };
       });
       pool[best.s].shift(); total += best.cl;
-      col[c].items.push({ slug: best.s, p: Object.assign({}, best.it.p, { _r: best.it.r }), top: best.top, bot: best.bot });
+      col[c].items.push({ slug: best.p.slug, p: best.p, top: best.top, bot: best.bot });
       col[c].h = best.bot;
     }
     return { col: col, clashes: total };
   }
   var res = attempt(false);
-  for (var t = 0; t < 1500 && res.clashes > 0; t++) { var r2 = attempt(true); if (r2.clashes < res.clashes) res = r2; }
-  var col = res.col;
+  for (var t = 0; mixed && t < 1500 && res.clashes > 0; t++) { var r2 = attempt(true); if (r2.clashes < res.clashes) res = r2; }
+  el._cols = cols;
   el.classList.add("pins-cols");
   el.style.setProperty("--cols", cols);
-  el.innerHTML = col.map(function (x) {
-    return '<div class="pcol">' + x.items.map(function (it) { return pinHtml(it.p, it.p._r); }).join("") + '</div>';
+  el.innerHTML = res.col.map(function (x) {
+    return '<div class="pcol">' + x.items.map(function (it, i) { return pinHtml(it.p, i); }).join("") + '</div>';
   }).join("");
   fillAvatars(el);
-  if (!el._resize) {
-    var last = cols;
-    el._resize = function () {
-      var w2 = el.clientWidth, c2 = w2 < 820 ? 2 : Math.min(6, Math.max(2, Math.floor((w2 + 16) / 236)));
-      if (c2 !== last) { last = c2; layoutPins(el, el._pins); }
-    };
-    window.addEventListener("resize", el._resize);
-  }
-  el._pins = pins;
 }
