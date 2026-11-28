@@ -25,6 +25,7 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
         '<input id="search" type="search" placeholder="Search names, styles, brands" autocomplete="off" aria-label="Search">' +
       '</form>' +
+      '<a class="nav-saved nav-lib" href="library.html" aria-label="Library">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v16H4zM14 4l6 2-4 14-6-2"/></svg><span>Library</span></a>' +
       '<a class="nav-saved" href="saved.html" aria-label="Saved">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Saved</span></a>' +
       '<a class="nav-signin" id="nav-me" href="login.html">Sign in</a>' +
     '</div>';

@@ -54,3 +54,11 @@ Import this repo in Vercel (framework preset: Other, no build command). That's i
 5. Give a creator points: `update public.creators set points = points + 10 where id = '<user id>';`
 
 Images of Lil Miquela, Imma and Aitana López belong to their creators and are shown with credit for demonstration.
+
+## Library (Persona House looks)
+`library.html` shows the house fashion library: 188 popular looks from public Pinterest fashion boards, each broken into blocks
+(face, body, hair, outfit, camera, light, location, scene, motion, mood, pose) with View JSON and Copy per block, plus Copy all
+(a character recipe that Studio > Combine can paste). The reference photo is shown with Pinterest's own embed and links back to the
+pin; nothing is copied from it except our written description. Faces are invented. Source notes: `templates/library/`;
+rebuild with `node scripts/build-library.js` (writes `templates/library.json` and `supabase/house-library.sql`).
+Run `supabase/house-library.sql` once (after `character-blocks.sql`) to make the blocks show up in Combine.
