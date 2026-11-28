@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect AI — Persona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="creator-tools.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="ct" id="page" hidden>
+  <a class="back" href="studio.html">← Studio</a>
+  <div class="eyebrow">Creator Studio</div>
+  <h1>Connect AI</h1>
+  <p class="ct-lead">Plug Persona into Claude, ChatGPT or any AI app that supports connectors. Your assistant can then design characters with you and publish them, images and all, straight to your Studio.</p>
+
+  <section class="ct-sec">
+    <h2>1. Your API key</h2>
+    <p class="sub">A key lets an AI tool act for your account: create characters and add images, within your upload allowance. Treat it like a password. You can remove a key at any time.</p>
+    <div class="ct-card">
+      <div id="keys"></div>
+      <form id="newkey" class="ct-copy" style="margin-top:16px" autocomplete="off">
+        <input type="text" id="label" maxlength="60" placeholder="Name this key, e.g. My ChatGPT" aria-label="Key name">
+        <button class="btn" type="submit" id="make">Create key</button>
+      </form>
+      <div id="shown"></div>
+      <p class="ct-msg" id="msg" role="status"></p>
+    </div>
+  </section>
+
+  <section class="ct-sec">
+    <h2>2. Your connector address</h2>
+    <p class="sub">This is the address you give your AI app. It includes your key, so keep it private like a password.</p>
+    <div class="ct-copy"><code class="ct-code" id="mcp-url"></code><button class="btn ghost" data-copy-el="mcp-url">Copy</button></div>
+    <p class="ct-msg">Create a key above and the address fills in with it.</p>
+  </section>
+
+  <section class="ct-sec">
+    <h2>3. Add it to your AI app</h2>
+    <p class="sub">Persona speaks MCP, the open standard AI apps use for connectors. Pick your app:</p>
+    <div class="ct-tabs" id="apps">
+      <button data-app="claude" class="on">Claude</button><button data-app="chatgpt">ChatGPT</button><button data-app="desktop">Claude Desktop, Cursor &amp; others</button>
+    </div>
+    <ol class="ct-steps" data-pane="claude">
+      <li><div><h3>Open connectors</h3><p>On claude.ai or the Claude app, go to <b>Settings → Connectors</b> and choose <b>Add custom connector</b>.</p></div></li>
+      <li><div><h3>Paste the address</h3><p>Name it <b>Persona</b>, paste your connector address from step 2, and press <b>Add</b>.</p></div></li>
+      <li><div><h3>Try it</h3><p>In a new chat, open the <b>+</b> menu, make sure <b>Persona</b> is switched on, and say <b>"Design a new Persona character with me"</b>.</p></div></li>
+    </ol>
+    <ol class="ct-steps" data-pane="chatgpt" hidden>
+      <li><div><h3>Switch on developer mode</h3><p>In ChatGPT, go to <b>Settings → Apps &amp; Connectors → Advanced settings</b> and turn on <b>Developer mode</b>. Needs a Plus, Pro, Business or Enterprise plan.</p></div></li>
+      <li><div><h3>Create the connector</h3><p>Back in <b>Apps &amp; Connectors</b>, choose <b>Create</b>. Name it <b>Persona</b>, paste your connector address, set <b>Authentication</b> to <b>No authentication</b> (the key is already in the address), tick that you trust it, and press <b>Create</b>.</p></div></li>
+      <li><div><h3>Try it</h3><p>In a new chat, choose <b>Developer mode</b> from the <b>+</b> menu, switch on Persona, and ask it to design a character. ChatGPT can make the images too, and Persona saves them.</p></div></li>
+    </ol>
+    <div data-pane="desktop" hidden>
+      <ol class="ct-steps">
+        <li><div><h3>Add Persona to your app's MCP settings</h3><p>Claude Desktop (<b>Settings → Developer → Edit config</b>), Cursor (<b>Settings → MCP</b>), Windsurf, VS Code and others accept this:</p>
+          <pre id="cfg"></pre><p><button class="btn ghost" data-copy-el="cfg">Copy settings</button></p></div></li>
+        <li><div><h3>Restart the app</h3><p>Persona's tools appear in the tools menu. Ask it to design a character.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="ct-sec">
+    <h2>What your AI can do</h2>
+    <ul class="ct-rules">
+      <li><b>Read the templates</b><span>Character template, a filled example and the image prompt pack.</span></li>
+      <li><b>Create characters</b><span>Name, handle, bio, profile photo and first images.</span></li>
+      <li><b>Add images</b><span>From any image link. Each uses one of your uploads.</span></li>
+      <li><b>Publish or hide</b><span>New images stay hidden unless you say "make it live".</span></li>
+    </ul>
+  </section>
+
+  <section class="ct-sec">
+    <h2>Tips &amp; templates</h2>
+    <p class="sub">Your assistant reads these through the connector. You can also use them yourself.</p>
+    <a class="btn ghost" href="tips.html">Open tips &amp; templates</a>
+  </section>
+</main>
+
+<footer>
+  <span>© Persona 2026 · <a href="tips.html">Tips</a> · <a href="studio.html">Studio</a></span>
+  <span>Keys are stored only as a fingerprint. Persona never sees your AI account.</span>
+</footer>
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+  var ORIGIN = location.origin, sb = Studio.client, DEMO = Studio.mode === "demo";
+  var msg = document.getElementById("msg");
+  function say(t, bad) { msg.textContent = t || ""; msg.className = "ct-msg" + (bad ? " err" : ""); }
+  function fmt(d) { return d ? new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Never"; }
+  function notOn(e) { return e && /create_api_key|revoke_api_key|api_keys|schema cache|does not exist|Could not find/i.test(e.message || ""); }
+  var NOT_ON = "AI connections aren't switched on yet. The site owner needs to run supabase/creator-api.sql in Supabase once.";
+
+  // Demo mode (your own computer, no Supabase): keys are pretend and live in this browser.
+  var demoKeys = function (v) { try { if (v) localStorage.setItem("persona-demo-keys", JSON.stringify(v)); return JSON.parse(localStorage.getItem("persona-demo-keys")) || []; } catch (e) { return []; } };
+  var api = {
+    list: function () {
+      if (DEMO) return Promise.resolve(demoKeys());
+      return sb.from("api_keys").select("id,label,prefix,created_at,last_used_at,revoked_at").is("revoked_at", null).order("created_at", { ascending: false })
+        .then(function (r) { if (r.error) throw r.error; return r.data; });
+    },
+    create: function (label) {
+      if (DEMO) {
+        var k = "psn_" + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        demoKeys([{ id: String(Date.now()), label: label || "AI tool", prefix: k.slice(0, 10), created_at: new Date().toISOString() }].concat(demoKeys()));
+        return Promise.resolve(k);
+      }
+      return sb.rpc("create_api_key", { p_label: label || "AI tool" }).then(function (r) { if (r.error) throw r.error; return r.data; });
+    },
+    revoke: function (id) {
+      if (DEMO) { demoKeys(demoKeys().filter(function (k) { return k.id !== id; })); return Promise.resolve(); }
+      return sb.rpc("revoke_api_key", { p_id: id }).then(function (r) { if (r.error) throw r.error; });
+    },
+  };
+
+  function renderKeys() {
+    return api.list().then(function (list) {
+      var el = document.getElementById("keys");
+      if (!list.length) { el.innerHTML = '<p class="muted">No keys yet. Create one below.</p>'; return; }
+      el.innerHTML = '<table class="ct-keys"><thead><tr><th>Name</th><th>Key</th><th class="hide-sm">Created</th><th class="hide-sm">Last used</th><th></th></tr></thead><tbody>' +
+        list.map(function (k) {
+          return '<tr><td>' + esc(k.label) + '</td><td class="muted"><code>' + esc(k.prefix) + '…</code></td><td class="muted hide-sm">' + fmt(k.created_at) +
+            '</td><td class="muted hide-sm">' + fmt(k.last_used_at) + '</td><td style="text-align:right"><button class="linkbtn" data-revoke="' + esc(k.id) + '">Remove</button></td></tr>';
+        }).join("") + '</tbody></table>';
+    }).catch(function (e) { document.getElementById("keys").innerHTML = ""; say(notOn(e) ? NOT_ON : e.message, true); });
+  }
+
+  document.getElementById("newkey").onsubmit = function (e) {
+    e.preventDefault();
+    var b = document.getElementById("make"); b.disabled = true; say("");
+    api.create(document.getElementById("label").value.trim()).then(function (k) {
+      document.getElementById("label").value = "";
+      document.getElementById("shown").innerHTML = '<div class="ct-new-key"><b>Your new key</b><p class="muted" style="margin:4px 0 10px">Copy it now. For your safety it won’t be shown again.</p>' +
+        '<div class="ct-copy"><code class="ct-code" id="newk">' + esc(k) + '</code><button class="btn" data-copy-el="newk">Copy key</button></div></div>';
+      fillMcp(k);
+      return renderKeys();
+    }).catch(function (e) { say(notOn(e) ? NOT_ON : e.message, true); }).then(function () { b.disabled = false; });
+  };
+  document.getElementById("keys").onclick = function (e) {
+    var b = e.target.closest("[data-revoke]"); if (!b) return;
+    if (b.dataset.sure !== "1") { b.dataset.sure = "1"; b.textContent = "Remove for good?"; return; }
+    api.revoke(b.dataset.revoke).then(renderKeys).then(function () { say("Key removed. Tools using it stop working right away."); }, function (e) { say(e.message, true); });
+  };
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-copy-el]"); if (!b) return;
+    navigator.clipboard.writeText(document.getElementById(b.dataset.copyEl).textContent).then(function () {
+      var t = b.textContent; b.textContent = "Copied"; setTimeout(function () { b.textContent = t; }, 1500);
+    }, function () {});
+  });
+
+  function fillMcp(k) {
+    var base = ORIGIN.replace(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, "https://persona-ai-characters.vercel.app") + "/api/mcp";
+    document.getElementById("mcp-url").textContent = base + "?key=" + (k || "psn_your_key");
+    document.getElementById("cfg").textContent = JSON.stringify({ mcpServers: { persona: { command: "npx", args: ["-y", "mcp-remote", base, "--header", "Authorization: Bearer " + (k || "psn_your_key")] } } }, null, 2);
+  }
+  document.getElementById("apps").onclick = function (e) {
+    var b = e.target.closest("[data-app]"); if (!b) return;
+    document.querySelectorAll("#apps button").forEach(function (x) { x.classList.toggle("on", x === b); });
+    document.querySelectorAll("[data-pane]").forEach(function (p) { p.hidden = p.dataset.pane !== b.dataset.app; });
+  };
+
+  Promise.all([Studio.session(), Studio.ready]).then(function (r) {
+    if (!r[0]) { location.href = "login.html"; return; }
+    document.getElementById("page").hidden = false;
+    fillMcp();
+    if (DEMO) say("Demo mode: keys made here are pretend and only work once Supabase is connected.");
+    renderKeys();
+  });
+</script>
+</body>
+</html>

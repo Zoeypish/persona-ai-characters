@@ -7,7 +7,7 @@
 .ct-sec { margin-top: clamp(48px, 7vw, 88px); }
 .ct-sec > p.sub { color: var(--muted); max-width: 640px; margin-bottom: 24px; }
 .ct-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
-.ct-rules { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
+.ct-rules { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0; border-top: 1px solid var(--line); }
 .ct-rules li { padding: 20px 20px 20px 0; border-bottom: 1px solid var(--line); }
 .ct-rules li b { display: block; font-weight: 500; margin-bottom: 4px; }
 .ct-rules li span { color: var(--muted); font-size: 14px; }
