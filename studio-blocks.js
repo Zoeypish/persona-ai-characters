@@ -59,7 +59,7 @@
         mine = Promise.resolve((rj("persona-blocks-v1") || []).map(function (r) { return fromRow(Object.assign({ mine: true }, r)); }));
         S.uses = rj("persona-block-uses-v1") || {};
       } else {
-        mine = sb.from("blocks").select("*").order("created_at", { ascending: false }).limit(2000).then(function (r) {
+        mine = sb.from("blocks").select("*").order("created_at", { ascending: false }).limit(5000).then(function (r) {
           if (r.error) throw r.error; return r.data || [];
         }).then(function (rows) { return rows.map(fromRow); }, function (e) { if (notOn(e)) S.off = true; return null; });
       }
