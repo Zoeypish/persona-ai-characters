@@ -44,17 +44,30 @@
   function uploadedImg(row, c) {
     var src = row.url || (row.blob && (blobUrls[row.id] || (blobUrls[row.id] = URL.createObjectURL(row.blob))));
     return { id: row.id, src: src, alt: c.name + ", uploaded image", uploaded: true, credit: "Uploaded by " + c.creator,
-      created: row.created || Date.parse(row.created_at) || 0, path: row.path };
+      created: row.created || Date.parse(row.created_at) || 0, path: row.path,
+      origin: { tool: row.origin_tool || (row.origin && row.origin.tool) || "", recipe: row.origin_recipe || (row.origin && row.origin.recipe) || "",
+        source: row.origin_source || "", rights: !!(row.rights_confirmed || row.rights) } };
   }
+
+  // Review status: 'ok' is shown; 'review' (reported, waiting for a decision) and 'removed' are hidden everywhere.
+  var HIDDEN = {};
+  function moderated(im, row) {
+    im.moderation = (row && row.moderation) || "ok";
+    if (im.moderation !== "ok") HIDDEN[im.id] = im.moderation; else delete HIDDEN[im.id];
+    return im;
+  }
+  // Demo mode keeps reports in this browser.
+  var REPORTS_KEY = "persona-reports-v1";
+  function demoReports() { return readJSON(REPORTS_KEY) || []; }
 
   // rows: [{id, live, url?/blob?, ...}] for one character
   function merge(c, rows) {
     var byId = {}; rows.forEach(function (r) { byId[r.id] = r; });
     var builtIn = imagesFor(c).map(function (im) {
-      im.live = byId[im.id] ? !!byId[im.id].live : true; return im;
+      im.live = byId[im.id] ? !!byId[im.id].live : true; return moderated(im, byId[im.id]);
     });
     var ups = rows.filter(function (r) { return r.url || r.blob; })
-      .map(function (r) { var im = uploadedImg(r, c); im.live = !!r.live; return im; })
+      .map(function (r) { var im = uploadedImg(r, c); im.live = !!r.live; return moderated(im, r); })
       .sort(function (a, b) { return a.created - b.created; });
     return builtIn.concat(ups);
   }
@@ -67,8 +80,13 @@
     var live = readJSON(LIVE_KEY) || {};
     return tx("readonly", function (st) { return st.getAll(); }).catch(function () { return []; }).then(function (ups) {
       var rows = (ups || []).filter(function (u) { return u.slug === c.slug; })
-        .map(function (u) { return { id: u.id, blob: u.blob, created: u.created, live: !!live[u.id] }; });
+        .map(function (u) { return { id: u.id, blob: u.blob, created: u.created, live: !!live[u.id], origin: u.origin, rights: u.rights }; });
       imagesFor(c).forEach(function (im) { if (live[im.id] !== undefined) rows.push({ id: im.id, live: live[im.id] }); });
+      var mod = readJSON("persona-moderation-v1") || {};
+      rows.forEach(function (r) { if (mod[r.id]) r.moderation = mod[r.id]; });
+      imagesFor(c).forEach(function (im) {
+        if (mod[im.id] && !rows.some(function (r) { return r.id === im.id; })) rows.push({ id: im.id, live: true, moderation: mod[im.id] });
+      });
       return rows;
     });
   }
@@ -133,10 +151,11 @@
       var name = String(fields.name || "").trim().slice(0, 60);
       if (!name) return Promise.reject(new Error("Give your character a name."));
       if (!user) return Promise.reject(new Error("Please sign in again."));
+      if (!fields.rights) return Promise.reject(new Error("Please tick the box to confirm your character follows the Content Policy."));
       var slug = freeSlug(name);
       var handle = String(fields.handle || "").trim().replace(/^@?/, "@").slice(0, 40);
       if (handle === "@") handle = "@" + slug.replace(/-/g, "");
-      var row = { slug: slug, name: name, handle: handle, bio: String(fields.bio || "").trim().slice(0, 600), creator_name: user.name || "", owner: user.id };
+      var row = { slug: slug, name: name, handle: handle, bio: String(fields.bio || "").trim().slice(0, 600), creator_name: user.name || "", owner: user.id, rights_confirmed: true };
       return shrink(fields.avatar, 800).then(function (blob) {
         if (sb) {
           var up = Promise.resolve();
@@ -150,6 +169,7 @@
           return up.then(function () { return sb.from("characters").insert(row).select().single(); }).then(function (r) {
             if (r.error) {
               if (/relation .*characters.* does not exist|schema cache/i.test(r.error.message)) throw new Error("Creating characters isn't switched on yet. Run supabase/create-characters.sql in Supabase first.");
+              if (/rights_confirmed/i.test(r.error.message)) throw new Error("The safety update isn't switched on yet. Run supabase/accounts-and-safety.sql in Supabase first.");
               throw new Error(r.error.code === "23505" ? "That name is taken. Try another one." : r.error.message);
             }
             return addChars([r.data]) && window.CHARACTERS.filter(function (c) { return c.slug === slug; })[0];
@@ -164,14 +184,21 @@
       });
     },
     all: function (c) { return rowsFor(c).then(function (rows) { return merge(c, rows); }); },
-    liveFor: function (c) { return Studio.all(c).then(function (l) { return l.filter(function (im) { return im.live; }); }); },
+    liveFor: function (c) { return Studio.all(c).then(function (l) { return l.filter(function (im) { return im.live && im.moderation === "ok"; }); }); },
+    // True if an image is under review or was taken down (used to hide it from Saved too).
+    isHidden: function (id) { return !!HIDDEN[id]; },
 
     setLive: function (c, id, on) {
       if (sb) return sb.from("images").upsert({ id: id, character_slug: c.slug, live: !!on }, { onConflict: "id" });
       var m = readJSON(LIVE_KEY) || {}; m[id] = !!on; writeJSON(LIVE_KEY, m); return Promise.resolve();
     },
 
-    upload: function (c, files, live) {
+    // rights: the creator ticked "I own or have the rights to these images, and no real person is shown without consent".
+    // origin: {tool, recipe} — which AI tool made the images, and the prompt or recipe (optional). Shown on each image.
+    upload: function (c, files, live, rights, origin) {
+      origin = origin || {};
+      var tool = String(origin.tool || "").trim().slice(0, 80), recipe = String(origin.recipe || "").trim().slice(0, 4000);
+      if (!rights) return Promise.reject(new Error("Please tick the box to confirm you have the rights to these images."));
       var now = Date.now();
       var list = Array.prototype.slice.call(files).filter(function (f) { return /^image\//.test(f.type); });
       if (sb) {
@@ -181,13 +208,18 @@
           return sb.storage.from(BUCKET).upload(path, f, { contentType: f.type }).then(function (r) {
             if (r.error) throw r.error;
             var url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-            return sb.from("images").insert({ id: id, character_slug: c.slug, url: url, path: path, live: !!live });
+            return sb.from("images").insert({ id: id, character_slug: c.slug, url: url, path: path, live: !!live, rights_confirmed: true,
+              origin_tool: tool || null, origin_recipe: recipe || null })
+              .then(function (r2) {
+                if (r2.error && /rights_confirmed/i.test(r2.error.message)) throw new Error("The safety update isn't switched on yet. Run supabase/accounts-and-safety.sql in Supabase first.");
+                if (r2.error) throw r2.error;
+              });
           });
         }));
       }
       if (live) { var lm = readJSON(LIVE_KEY) || {}; list.forEach(function (f, i) { lm["up-" + now + "-" + i] = true; }); writeJSON(LIVE_KEY, lm); }
       return tx("readwrite", function (st) {
-        list.forEach(function (f, i) { st.put({ id: "up-" + now + "-" + i, slug: c.slug, name: f.name, blob: f, created: now + i }); });
+        list.forEach(function (f, i) { st.put({ id: "up-" + now + "-" + i, slug: c.slug, name: f.name, blob: f, created: now + i, rights: true, rightsAt: now, origin: { tool: tool, recipe: recipe } }); });
       });
     },
 
@@ -229,8 +261,68 @@
       return Promise.resolve();
     },
     signOut: function () {
-      if (sb) return sb.auth.signOut();
-      writeJSON(SESSION_KEY, null); return Promise.resolve();
+      // The account keeps its saves and follows; this device forgets them so the next person starts fresh.
+      function forget() { if (window.Social) Social.clearLocal(); }
+      if (sb) return sb.auth.signOut().then(forget, forget);
+      writeJSON(SESSION_KEY, null); forget(); return Promise.resolve();
+    },
+
+    // ---------- safety: reports, takedown requests, review ----------
+    // r: {image_id, character_slug, reason, details}. Signed-in people only; one report per person per image.
+    report: function (r) {
+      if (sb) return Studio.session().then(function (u) {
+        if (!u) throw new Error("Sign in to report an image.");
+        return sb.from("reports").insert({ kind: "report", image_id: r.image_id, character_slug: r.character_slug, image_url: r.image_url || null,
+          reason: r.reason, details: (r.details || "").slice(0, 2000) || null });
+      }).then(function (res) {
+        if (res.error && res.error.code === "23505") return "already";
+        if (res.error) throw new Error(/reports/.test(res.error.message) ? "Reporting isn't switched on yet." : res.error.message);
+        return "ok";
+      });
+      return Studio.session().then(function (u) {
+        if (!u) throw new Error("Sign in to report an image.");
+        var list = demoReports();
+        if (list.some(function (x) { return x.kind === "report" && x.image_id === r.image_id && x.reporter === u.id; })) return "already";
+        list.push(Object.assign({ id: "rep-" + Date.now(), kind: "report", reporter: u.id, status: "open", created_at: new Date().toISOString() }, r));
+        writeJSON(REPORTS_KEY, list); return "ok";
+      });
+    },
+    // t: {image_url, page_url, reason, details, contact_name, contact_email, is_rights_owner}. Anyone can send one.
+    takedown: function (t) {
+      var row = { kind: "takedown", image_id: t.image_id || null, character_slug: t.character_slug || null, image_url: t.image_url || null, page_url: t.page_url || null,
+        reason: t.reason, details: (t.details || "").slice(0, 2000) || null, contact_name: t.contact_name || null, contact_email: t.contact_email,
+        is_rights_owner: !!t.is_rights_owner };
+      if (sb) return sb.from("reports").insert(row).then(function (res) {
+        if (res.error) throw new Error(/reports/.test(res.error.message) ? "Takedown requests aren't switched on yet. Please email us instead." : res.error.message);
+        return "ok";
+      });
+      var list = demoReports(); list.push(Object.assign({ id: "rep-" + Date.now(), status: "open", created_at: new Date().toISOString() }, row));
+      writeJSON(REPORTS_KEY, list); return Promise.resolve("ok");
+    },
+    // Admins review reports and decide. In demo mode the demo creator is the admin.
+    isAdmin: function () {
+      if (sb) return sb.rpc("is_admin").then(function (r) { return !r.error && r.data === true; }, function () { return false; });
+      return Studio.session().then(function (u) { return !!u; });
+    },
+    reports: function () {
+      if (sb) return sb.from("reports").select("*").order("created_at", { ascending: false }).limit(500)
+        .then(function (r) { if (r.error) throw r.error; return r.data || []; });
+      return Promise.resolve(demoReports().slice().reverse());
+    },
+    // action: 'keep' (show again), 'remove' (take down), 'review' (hide for now)
+    moderate: function (imageId, action, slug) {
+      if (sb) return sb.rpc("moderate_image", { p_image_id: imageId, p_action: action, p_slug: slug || null })
+        .then(function (r) { if (r.error) throw r.error; return r.data; });
+      var st = { keep: "ok", remove: "removed", review: "review" }[action];
+      var mod = readJSON("persona-moderation-v1") || {}; if (st === "ok") delete mod[imageId]; else mod[imageId] = st; writeJSON("persona-moderation-v1", mod);
+      if (action !== "review") writeJSON(REPORTS_KEY, demoReports().map(function (x) {
+        if (x.image_id === imageId && x.status === "open") x.status = action === "keep" ? "kept" : "removed"; return x; }));
+      return Promise.resolve(st);
+    },
+    resolveReport: function (id, status) {
+      if (sb) return sb.rpc("resolve_report", { p_id: id, p_status: status }).then(function (r) { if (r.error) throw r.error; });
+      writeJSON(REPORTS_KEY, demoReports().map(function (x) { if (x.id === id) x.status = status; return x; }));
+      return Promise.resolve();
     },
 
     // ---------- upload allowance: 5 to start, +1 for every 10 points ----------

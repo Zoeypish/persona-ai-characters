@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search — Persona</title>
+<meta name="description" content="Search AI characters, their creators, styles and brands on Persona.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="feed search-page">
+  <section class="s-head">
+    <h1 class="s-q" id="s-q"></h1>
+    <div class="chips" id="s-chips"></div>
+  </section>
+  <div id="s-body"><p class="empty-pins">Searching…</p></div>
+</main>
+
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a></span>
+  <span>Images © their creators.</span>
+</footer>
+
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script src="search.js"></script>
+<script>
+  var q = (new URLSearchParams(location.search).get("q") || "").trim(), shown = 24;
+  document.title = (q ? q + " — " : "") + "Search — Persona";
+  document.getElementById("s-q").textContent = q || "Explore";
+
+  function chips(list, on) {
+    document.getElementById("s-chips").innerHTML = list.map(function (s) {
+      return '<a class="chip' + (on.indexOf(s) > -1 ? " on" : "") + '" href="search.html?q=' + encodeURIComponent(s) + '">' + esc(s) + '</a>';
+    }).join("");
+  }
+  // Prices show in US dollars: converted with the daily rates in Supabase (starting values until those load).
+  var FX = { USD: 1, EUR: 1.16, GBP: 1.33 };
+  try {
+    if (window.Studio && Studio.client) Studio.client.from("persona_fx_rates").select("currency,usd_per_unit").then(function (r) {
+      (r.data || []).forEach(function (x) { FX[x.currency] = +x.usd_per_unit; });
+    });
+  } catch (e) { /* keep starting values */ }
+  function usd(n, c) { var r = FX[c || "USD"]; return n == null || !r ? n : Math.round(n * r * 100) / 100; }
+  function price(it) {
+    var cur = FX[it.c || "USD"] ? "USD" : it.c;
+    return it.sp ? '<b class="sale">' + money(usd(it.sp, it.c), cur) + '</b> <s>' + money(usd(it.p, it.c), cur) + '</s>' : '<b>' + money(usd(it.p, it.c), cur) + '</b>';
+  }
+  // Clicks go through /api/go, which tracks them and uses the best-paying affiliate link.
+  function shopHref(it) {
+    var i = String(it.id || "").lastIndexOf(":");
+    return i > 0 ? "/api/go?d=" + encodeURIComponent(it.id.slice(0, i)) + "&x=" + encodeURIComponent(it.id.slice(i + 1)) : it.l;
+  }
+  function productCard(it) {
+    return '<a class="product s-product" href="' + esc(shopHref(it)) + '" target="_blank" rel="noopener sponsored" title="' + esc(it.t) + '">' +
+      '<span class="product-img">' + (it.m ? '<img src="' + esc(it.m) + '" alt="' + esc(it.t) + '" loading="lazy" onerror="this.remove()">' : '') + '</span>' +
+      '<span class="product-price">' + price(it) + '</span><small>' + esc(it.b) + '</small></a>';
+  }
+  function people(list) {
+    return '<section class="s-people">' + list.map(function (r) {
+      var c = r.d.ref;
+      return '<div class="s-person"><a href="profile.html?c=' + c.slug + '"><span class="mini-ava xl" data-ava="' + c.slug + '"></span>' +
+        '<b>' + esc(c.name) + '</b><small>' + esc(c.handle || "") + '</small>' + (c.creator ? '<small class="by">by ' + esc(c.creator) + '</small>' : '') + '</a>' +
+        followBtn(c.slug) + '</div>';
+    }).join("") + '</section>';
+  }
+
+  function render(res) {
+    var body = document.getElementById("s-body"), html = [], best = function (l) { return l.length ? l[0].s : 0; };
+    if (!q) {
+      chips(Search.STYLES.slice(0, 14), []);
+      body.innerHTML = '<h2 class="s-label">Characters</h2>' + people(CHARACTERS.map(function (c) { return { d: { ref: c } }; }));
+      fillAvatars(body); return;
+    }
+    var related = (res.styles || []).slice();
+    res.brands.forEach(function (b) { (Search.brandStyles(b) || []).forEach(function (x) { if (related.indexOf(x) < 0) related.push(x); }); });
+    chips(related.concat(Search.STYLES.filter(function (s) { return related.indexOf(s) < 0; })).slice(0, 12), res.styles || []);
+    if (!res.chars.length && !res.pins.length && !res.products.length) {
+      body.innerHTML = '<p class="empty-pins">Nothing found for “' + esc(q) + '”. Try a name, a style or a brand.</p>';
+      return;
+    }
+    // 1. Characters and creators always come first.
+    if (res.chars.length) html.push(people(res.chars.slice(0, 8)));
+    // 2. Then looks and products, whichever matched better goes first.
+    var looks = res.pins.length ? '<section class="s-sec"><h2 class="s-label">Looks</h2><div class="pins" id="pins"></div></section>' : '';
+    var shop = res.products.length ? '<section class="s-sec"><h2 class="s-label">Shop <span>' + res.products.length + '</span></h2>' +
+      '<div class="s-products" id="s-products"></div><p class="center"><button class="pill" id="s-more" hidden>Show more</button></p></section>' : '';
+    var shopFirst = !res.pins.length || best(res.products) > best(res.pins) + 150 || res.brands.length > 0;
+    html.push(shopFirst ? shop + looks : looks + shop);
+    body.innerHTML = html.join("");
+    fillAvatars(body);
+    if (res.pins.length) layoutPins(document.getElementById("pins"), res.pins.map(function (r) { return r.d.ref; }), { mixed: false });
+    if (res.products.length) drawProducts(res.products);
+  }
+  function drawProducts(list) {
+    var el = document.getElementById("s-products"), more = document.getElementById("s-more");
+    el.innerHTML = list.slice(0, shown).map(function (r) { return productCard(r.d.ref); }).join("");
+    more.hidden = list.length <= shown;
+    more.onclick = function () { shown += 24; drawProducts(list); };
+  }
+
+  loadAllLive().then(function (pins) { return Search.buildAll(pins); }).then(function (all) {
+    render(Search.run(all, q));
+  }).catch(function (e) {
+    console.error(e);
+    document.getElementById("s-body").innerHTML = '<p class="empty-pins">Search couldn’t load. Please refresh.</p>';
+  });
+</script>
+</body>
+</html>

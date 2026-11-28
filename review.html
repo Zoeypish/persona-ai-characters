@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review reports — Persona</title>
+<meta name="description" content="Persona admins review reported images and takedown requests.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="legal review" id="rv">
+  <div class="eyebrow">Persona admin</div>
+  <h1>Review reports</h1>
+  <p class="legal-lead" id="rv-lead">Loading…</p>
+  <div class="tabs" id="rv-tabs"><button data-t="open" class="on">Waiting</button><button data-t="done">Decided</button></div>
+  <div id="rv-list"></div>
+</main>
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a> · <a href="takedown.html">Takedown request</a></span>
+  <span>Every character on Persona is virtual. Images are AI-generated.</span>
+</footer>
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script src="search.js"></script>
+<script>
+  var REASON = { real_person: "Real person without consent", copyright: "Copyright", sexual: "Sexual", minor: "Child safety", hate: "Hate or harassment",
+    violence: "Violence", spam: "Spam or scam", other: "Other", appeal: "Appeal" };
+  var all = [], tab = "open", imgs = {};
+  function when(t) { return new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+  function load() {
+    return Promise.all([Studio.reports(), loadAllLive()]).then(function (r) {
+      all = r[0];
+      Object.keys(r[1]).forEach(function (s) { r[1][s].forEach(function (p) { imgs[p.id] = p; }); });
+      CHARACTERS.forEach(function (c) { imagesFor(c).forEach(function (im) { if (!imgs[im.id]) imgs[im.id] = { src: im.src, slug: c.slug }; }); });
+      render();
+    }).catch(function (e) { document.getElementById("rv-lead").textContent = "Couldn't load reports: " + e.message; });
+  }
+  function render() {
+    var open = all.filter(function (x) { return x.status === "open"; });
+    document.getElementById("rv-lead").textContent = open.length ? open.length + " report" + (open.length === 1 ? "" : "s") + " waiting for a decision." : "Nothing waiting. Nice.";
+    var list = all.filter(function (x) { return tab === "open" ? x.status === "open" : x.status !== "open"; });
+    // One card per image; takedown requests without an image get their own card.
+    var groups = {}, order = [];
+    list.forEach(function (x) { var k = x.image_id || x.id; if (!groups[k]) { groups[k] = []; order.push(k); } groups[k].push(x); });
+    document.getElementById("rv-list").innerHTML = order.length ? order.map(function (k) {
+      var g = groups[k], first = g[0], im = imgs[first.image_id] || {}, src = im.src || first.image_url, c = charBySlug(first.character_slug || im.slug);
+      var people = g.filter(function (x) { return x.kind === "report"; }).length, td = g.filter(function (x) { return x.kind === "takedown"; });
+      var actions = first.image_id
+        ? (tab === "open"
+            ? '<button class="btn" data-act="remove" data-img="' + esc(first.image_id) + '" data-slug="' + esc(first.character_slug || im.slug || "") + '">Take down</button>' +
+              '<button class="btn ghost" data-act="keep" data-img="' + esc(first.image_id) + '" data-slug="' + esc(first.character_slug || im.slug || "") + '">Keep, show again</button>'
+            : '<button class="btn ghost" data-act="' + (first.status === "removed" ? "keep" : "remove") + '" data-img="' + esc(first.image_id) + '" data-slug="' + esc(first.character_slug || im.slug || "") + '">' + (first.status === "removed" ? "Restore" : "Take down") + '</button>')
+        : (tab === "open"
+            ? '<button class="btn" data-res="removed" data-id="' + esc(first.id) + '">Done, handled</button><button class="btn ghost" data-res="kept" data-id="' + esc(first.id) + '">Dismiss</button>'
+            : '<button class="btn ghost" data-res="open" data-id="' + esc(first.id) + '">Reopen</button>');
+      return '<article class="rv-card">' +
+        '<div class="rv-img">' + (src ? '<img src="' + esc(src) + '" alt="">' : '<span>No image</span>') + '</div>' +
+        '<div class="rv-body">' +
+          '<b>' + (c ? esc(c.name) : (first.image_id ? esc(first.image_id) : "Takedown request")) + '</b>' +
+          '<small>' + (first.image_id ? (people ? people + " report" + (people === 1 ? "" : "s") : "") + (td.length ? (people ? " · " : "") + td.length + " takedown request" + (td.length === 1 ? "" : "s") : "") : "") +
+            (tab !== "open" ? " · " + (first.status === "removed" ? "Taken down" : "Kept") : "") + '</small>' +
+          '<ul>' + g.map(function (x) {
+            return '<li><span class="rv-reason">' + esc(REASON[x.reason] || x.reason) + '</span> ' + when(x.created_at) +
+              (x.details ? '<br>' + esc(x.details) : '') +
+              (x.kind === "takedown" ? '<br><i>From ' + esc(x.contact_name || "") + ' &lt;' + esc(x.contact_email || "") + '&gt;' + (x.is_rights_owner ? ", rights owner or person shown" : "") + '</i>' +
+                (x.page_url ? '<br><a class="ulink" href="' + esc(x.page_url) + '" target="_blank" rel="noopener">Page they reported</a>' : '') : '') + '</li>';
+          }).join("") + '</ul>' +
+          '<div class="report-row">' + actions + '</div>' +
+        '</div></article>';
+    }).join("") : '<p class="empty-pins">' + (tab === "open" ? "No reports waiting." : "No decisions yet.") + '</p>';
+  }
+  document.getElementById("rv-tabs").onclick = function (e) {
+    var b = e.target.closest("[data-t]"); if (!b) return; tab = b.dataset.t;
+    document.querySelectorAll("#rv-tabs button").forEach(function (x) { x.classList.toggle("on", x === b); }); render();
+  };
+  document.getElementById("rv-list").onclick = function (e) {
+    var b = e.target.closest("[data-act],[data-res]"); if (!b) return; b.disabled = true;
+    (b.dataset.act ? Studio.moderate(b.dataset.img, b.dataset.act, b.dataset.slug) : Studio.resolveReport(b.dataset.id, b.dataset.res))
+      .then(load, function (x) { b.disabled = false; document.getElementById("rv-lead").textContent = "Couldn't save: " + x.message; });
+  };
+  Studio.session().then(function (u) {
+    if (!u) { location.href = "login.html"; return; }
+    return Studio.isAdmin().then(function (a) {
+      if (!a) { document.getElementById("rv-lead").textContent = "This page is for Persona admins."; document.getElementById("rv-tabs").hidden = true; return; }
+      load();
+    });
+  });
+</script>
+</body>
+</html>

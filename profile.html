@@ -17,7 +17,7 @@
 <main id="main"></main>
 
 <footer>
-  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a></span>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a></span>
   <span>Images © their creators.</span>
 </footer>
 
@@ -27,6 +27,7 @@
 <script src="data.js"></script>
 <script src="store.js"></script>
 <script src="app.js"></script>
+<script src="search.js"></script>
 <script>
   var slug = new URLSearchParams(location.search).get("c");
   var c = null, pins = [], tab = "pins";
@@ -48,6 +49,7 @@
       '<section class="phead">' +
         '<span class="big-ava" data-ava="' + c.slug + '"></span>' +
         '<h1>' + esc(c.name) + '</h1>' +
+        '<p class="ai-note"><span class="ai-badge">AI</span> Virtual character. Every image is AI-generated.</p>' +
         '<div class="pactions">' + followBtn(c.slug, "lg") + '</div>' +
         '<div class="ptabs"><button data-tab="pins" class="' + (tab === "pins" ? "on" : "") + '">Pins</button><button data-tab="about" class="' + (tab === "about" ? "on" : "") + '">About</button></div>' +
       '</section>' +

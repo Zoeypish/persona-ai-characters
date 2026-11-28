@@ -13,10 +13,15 @@ function redirect(res, url) {
 }
 module.exports = async function (req, res) {
   const q = req.query || Object.fromEntries(new URL(req.url, "http://x").searchParams);
-  const id = /^\d{1,12}$/.test(String(q.p || "")) ? Number(q.p) : null;
+  let id = /^\d{1,12}$/.test(String(q.p || "")) ? Number(q.p) : null;
   const clean = (v, n) => (typeof v === "string" && /^[a-zA-Z0-9_.-]{1,80}$/.test(v) ? v.slice(0, n) : null);
-  if (!id) return redirect(res, "/");
   try {
+    // Search results identify a product by store + store's own id: /api/go?d=<domain>&x=<id>
+    if (!id && clean(q.d, 80) && clean(q.x, 80)) {
+      const rows = await db(false).select("persona_products", "select=id&store_domain=eq." + encodeURIComponent(q.d) + "&external_id=eq." + encodeURIComponent(q.x) + "&limit=1");
+      id = rows && rows[0] ? rows[0].id : null;
+    }
+    if (!id) return redirect(res, "/");
     const info = await db(false).rpc("persona_log_click", { p_product: id, p_pin: clean(q.pin, 80), p_character: clean(q.c, 60) });
     if (!info || !info.link) return redirect(res, "/");
     // Without an affiliate network the store still sees the visit came from Persona.

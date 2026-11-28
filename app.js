@@ -17,15 +17,13 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
 (function header() {
   var el = document.getElementById("nav");
   if (!el) return;
-  var opts = CHARACTERS.map(function (c) { return '<option value="' + esc(c.name) + '">'; }).join("");
   el.className = "nav";
   el.innerHTML =
     '<a class="wordmark" href="./" aria-label="Persona home">' + MARK + '<span>Persona</span></a>' +
     '<div class="nav-right">' +
       '<form class="search" role="search" id="search-form">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
-        '<input id="search" type="search" placeholder="Search characters, looks, creators" list="search-list" autocomplete="off" aria-label="Search characters">' +
-        '<datalist id="search-list">' + opts + '</datalist>' +
+        '<input id="search" type="search" placeholder="Search names, styles, brands" autocomplete="off" aria-label="Search">' +
       '</form>' +
       '<a class="nav-saved" href="saved.html" aria-label="Saved">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Saved</span></a>' +
       '<a class="nav-signin" id="nav-me" href="login.html">Sign in</a>' +
@@ -39,39 +37,90 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
     me.className = "avatar"; me.href = "studio.html"; me.title = name; me.setAttribute("aria-label", "Your studio (" + name + ")");
     me.innerHTML = u.avatar ? '<img src="' + esc(u.avatar) + '" alt="" referrerpolicy="no-referrer">' : esc(initials || "?");
   }).catch(function () {});
-  document.getElementById("search-form").onsubmit = function (e) {
-    e.preventDefault();
-    var q = document.getElementById("search").value.trim().toLowerCase();
-    if (!q) return;
-    var hit = CHARACTERS.filter(function (c) {
-      return (c.name + " " + c.handle + " " + c.category + " " + c.origin + " " + c.creator).toLowerCase().indexOf(q) > -1;
-    })[0];
-    if (hit) location.href = "profile.html?c=" + hit.slug;
-    else document.getElementById("search").value = "", document.getElementById("search").placeholder = "No match for “" + q + "”";
-  };
+  // Typing in the search box and its suggestions are handled in search.js.
 })();
 
 // ---------- Save, follow, shop ----------
+// Saves and follows live in this browser for visitors. For signed-in people they are also stored in their
+// Persona account (Supabase tables "saves" and "follows"), so they follow them to any device.
+// On sign-in, anything saved in this browser before signing in is added to the account.
 var Social = (function () {
-  var SAVED = "persona-saved-v1", FOLLOW = "persona-following-v1";
+  var SAVED = "persona-saved-v1", FOLLOW = "persona-following-v1", OWNER = "persona-social-owner-v1";
+  var uid = null; // signed-in account whose saves are in sync, or null
   function read(k) { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } }
   function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  return {
+  function db() { return uid && window.Studio && Studio.client; }
+  function warn(r) { if (r && r.error) console.warn("Couldn't sync to your account:", r.error.message); }
+  function snap(pin) { return { id: pin.id, slug: pin.slug, src: pin.src, alt: pin.alt, credit: pin.credit || "", creditUrl: pin.creditUrl || "" }; }
+
+  // Called once per page: load the account's saves and follows, and add this browser's to the account.
+  function sync() {
+    if (!window.Studio || !Studio.client) return Promise.resolve(false);
+    return Studio.session().then(function (u) {
+      if (!u) {
+        // Signed out (e.g. on another tab): don't keep the last person's saves on this device.
+        if (localStorage.getItem(OWNER)) { [SAVED, FOLLOW, OWNER].forEach(function (k) { localStorage.removeItem(k); }); return true; }
+        return false;
+      }
+      var sb = Studio.client;
+      return Promise.all([
+        sb.from("saves").select("pin_id,pin,created_at").order("created_at", { ascending: false }),
+        sb.from("follows").select("character_slug,created_at").order("created_at"),
+      ]).then(function (r) {
+        if (r[0].error || r[1].error) { warn(r[0].error ? r[0] : r[1]); return false; } // tables not set up yet: stay in this browser
+        var owner = localStorage.getItem(OWNER);
+        // Saves made in this browser by a visitor (or by this same account) are kept; another account's are not.
+        var localSaves = owner && owner !== u.id ? [] : read(SAVED), localFollows = owner && owner !== u.id ? [] : read(FOLLOW);
+        var have = {}, saves = r[0].data.map(function (x) { have[x.pin_id] = 1; return Object.assign({}, x.pin, { id: x.pin_id }); });
+        var newSaves = localSaves.filter(function (p) { return p && p.id && !have[p.id]; });
+        var follows = r[1].data.map(function (x) { return x.character_slug; });
+        var newFollows = localFollows.filter(function (s) { return follows.indexOf(s) < 0; });
+        uid = u.id;
+        var ups = [];
+        if (newSaves.length) ups.push(sb.from("saves").upsert(newSaves.slice().reverse().map(function (p) { return { pin_id: p.id, pin: snap(p) }; }), { onConflict: "user_id,pin_id" }).then(warn));
+        if (newFollows.length) ups.push(sb.from("follows").upsert(newFollows.map(function (s) { return { character_slug: s }; }), { onConflict: "user_id,character_slug" }).then(warn));
+        var before = JSON.stringify([read(SAVED), read(FOLLOW)]);
+        write(SAVED, newSaves.concat(saves)); write(FOLLOW, follows.concat(newFollows));
+        try { localStorage.setItem(OWNER, u.id); } catch (e) {}
+        return Promise.all(ups).then(function () { return before !== JSON.stringify([read(SAVED), read(FOLLOW)]); });
+      });
+    }).catch(function (e) { console.warn("Couldn't load your saves:", e); return false; });
+  }
+
+  var api = {
     saved: function () { return read(SAVED); },
     isSaved: function (id) { return read(SAVED).some(function (p) { return p.id === id; }); },
     toggleSave: function (pin) {
       var list = read(SAVED), i = list.findIndex(function (p) { return p.id === pin.id; });
-      if (i > -1) list.splice(i, 1); else list.unshift({ id: pin.id, slug: pin.slug, src: pin.src, alt: pin.alt, credit: pin.credit || "", creditUrl: pin.creditUrl || "" });
-      write(SAVED, list); return i === -1;
+      if (i > -1) list.splice(i, 1); else list.unshift(snap(pin));
+      write(SAVED, list);
+      if (db()) (i > -1 ? Studio.client.from("saves").delete().eq("pin_id", pin.id)
+                        : Studio.client.from("saves").upsert({ pin_id: pin.id, pin: snap(pin) }, { onConflict: "user_id,pin_id" })).then(warn);
+      return i === -1;
     },
     following: function () { return read(FOLLOW); },
     isFollowing: function (slug) { return read(FOLLOW).indexOf(slug) > -1; },
     toggleFollow: function (slug) {
       var list = read(FOLLOW), i = list.indexOf(slug);
       if (i > -1) list.splice(i, 1); else list.push(slug);
-      write(FOLLOW, list); return i === -1;
+      write(FOLLOW, list);
+      if (db()) (i > -1 ? Studio.client.from("follows").delete().eq("character_slug", slug)
+                        : Studio.client.from("follows").upsert({ character_slug: slug }, { onConflict: "user_id,character_slug" })).then(warn);
+      return i === -1;
     },
+    // Forget this device's copy (used on sign-out). The account keeps everything.
+    clearLocal: function () { [SAVED, FOLLOW, OWNER].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} }); uid = null; },
+    inAccount: function () { return !!uid; },
   };
+  // Pages wait for this (via loadAllLive) so the homepage mix uses the account's follows.
+  api.ready = (window.Studio ? Studio.ready : Promise.resolve()).then(sync).then(function (changed) {
+    if (!changed) return;
+    // Update any Save / Follow buttons already on screen, then let pages re-render.
+    document.querySelectorAll("[data-save]").forEach(function (b) { var on = api.isSaved(b.dataset.save); b.classList.toggle("on", on); b.textContent = on ? "Saved" : "Save"; });
+    document.querySelectorAll("[data-follow]").forEach(function (b) { var on = api.isFollowing(b.dataset.follow); b.classList.toggle("on", on); b.textContent = on ? "Following" : "Follow"; });
+    document.dispatchEvent(new CustomEvent("persona:saved")); document.dispatchEvent(new CustomEvent("persona:follow"));
+  }, function () {});
+  return api;
 })();
 
 function charBySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
@@ -88,6 +137,7 @@ var ICON = {
   save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
   bag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 13H6zM9 8V6a3 3 0 0 1 6 0v2"/></svg>',
   close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  flag: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>',
 };
 
 function followBtn(slug, extra) {
@@ -105,6 +155,7 @@ function pinHtml(p, i) {
   return '<div class="pin" data-id="' + esc(p.id) + '">' +
     '<div class="pin-media' + (ar ? '' : ' r' + (i % 5)) + '" data-open="' + esc(p.id) + '"' + (ar ? ' style="aspect-ratio:1/' + ar.toFixed(4) + '"' : '') + '>' +
       '<img src="' + p.src + '" alt="' + esc(p.alt) + '" loading="lazy" decoding="async" onload="this.classList.add(\'loaded\')">' +
+      '<span class="ai-tag" title="AI-generated image of a virtual character">AI</span>' +
       '<div class="pin-over">' +
         '<button class="save-btn' + (saved ? " on" : "") + '" data-save="' + esc(p.id) + '">' + (saved ? "Saved" : "Save") + '</button>' +
         '<div class="pin-foot">' +
@@ -129,7 +180,7 @@ function measurePins(pins) {
   }));
 }
 
-function toPin(c, im) { return { id: im.id, slug: c.slug, src: im.src, alt: im.alt, credit: im.credit, creditUrl: im.creditUrl }; }
+function toPin(c, im) { return { id: im.id, slug: c.slug, src: im.src, alt: im.alt, credit: im.credit, creditUrl: im.creditUrl, created: im.created, uploaded: !!im.uploaded, origin: im.origin }; }
 
 // Small round avatars use each character's first live image.
 var AVATARS = {};
@@ -187,7 +238,9 @@ function openPin(id) {
         '</div>' +
         '<div class="closeup-who"><a href="profile.html?c=' + c.slug + '" class="who"><span class="mini-ava lg" data-ava="' + c.slug + '"></span><span><b>' + esc(c.name) + '</b><small>by ' + esc(c.creator) + '</small></span></a>' + followBtn(c.slug) + '</div>' +
         (credit ? '<p class="closeup-credit">' + credit + '</p>' : '') +
+        originHtml(p, c) +
         '<section class="shop-list" id="shop-list" aria-label="Shop the look"></section>' +
+        '<div class="report-wrap" id="report-wrap"><button class="linkbtn report-link" data-report="' + esc(p.id) + '">' + ICON.flag + 'Report this image</button></div>' +
       '</div>' +
     '</div>';
   fillAvatars(box);
@@ -224,13 +277,85 @@ function renderShop(p) {
       }).join("") + '</div>' + lens;
   });
 }
+// ---------- AI label and origin record (provenance) ----------
+// Every image on Persona is of a virtual character. The origin record says who made it, with what, when, and how.
+function originHtml(p, c) {
+  var o = p.origin || {}, when = p.created ? new Date(p.created).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+  var rows = [
+    ["Made by", esc(c.creator || "The character's creator")],
+    ["Character", esc(c.name) + " (virtual, not a real person)"],
+    ["AI tool", o.tool ? esc(o.tool) : "Not shared by the creator"],
+    ["Added", when || (p.uploaded ? "" : "Before Persona (featured)")],
+    ["Source", p.creditUrl ? '<a href="' + esc(p.creditUrl) + '" target="_blank" rel="noopener">' + esc(p.credit || "Original post") + '</a>' : (o.source ? esc(o.source) : (p.uploaded ? "Uploaded to Persona" : ""))],
+    ["Rights", p.uploaded ? "Creator confirmed they own this image" : "Shown with credit to the creator"],
+  ].filter(function (r) { return r[1]; });
+  return '<details class="origin">' +
+    '<summary><span class="ai-badge">AI-generated</span><span class="origin-sum">Origin record</span></summary>' +
+    '<dl>' + rows.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join("") + '</dl>' +
+    (o.recipe ? '<div class="recipe"><b>Prompt / recipe</b><p>' + esc(o.recipe) + '</p><button class="linkbtn" data-copy-recipe>Copy</button></div>' : '') +
+  '</details>';
+}
+
+// ---------- Report an image ----------
+var REPORT_REASONS = [
+  ["real_person", "Shows a real person without their consent"],
+  ["copyright", "Uses my work or someone else's without permission"],
+  ["sexual", "Sexual or nude content"],
+  ["minor", "Looks like a child in an unsafe way"],
+  ["hate", "Hate or harassment"],
+  ["violence", "Violence or self-harm"],
+  ["spam", "Spam or a scam"],
+  ["other", "Something else"],
+];
+function openReport(id) {
+  var p = PINS[id], wrap = document.getElementById("report-wrap"); if (!p || !wrap) return;
+  Studio.session().then(function (u) {
+    if (!u) {
+      wrap.innerHTML = '<div class="report-box"><b>Report this image</b><p>Please <a href="login.html">sign in</a> to report, so one person can\'t hide images on their own. ' +
+        'If it\'s your image or your face, you can also send a <a href="takedown.html?image=' + encodeURIComponent(p.id) + '&c=' + encodeURIComponent(p.slug) + '">takedown request</a> without signing in.</p></div>';
+      return;
+    }
+    wrap.innerHTML = '<form class="report-box" id="report-form"><b>What\'s wrong with this image?</b>' +
+      REPORT_REASONS.map(function (r, i) { return '<label><input type="radio" name="reason" value="' + r[0] + '"' + (i ? '' : ' required') + '> ' + r[1] + '</label>'; }).join("") +
+      '<textarea name="details" rows="2" maxlength="2000" placeholder="Anything else we should know? (optional)"></textarea>' +
+      '<div class="report-row"><button class="btn" type="submit">Send report</button><button class="linkbtn" type="button" data-report-cancel>Cancel</button></div>' +
+      '<p class="muted">Reports are private. An image reported by 3 people is hidden until we review it. ' +
+      '<a href="takedown.html?image=' + encodeURIComponent(p.id) + '&c=' + encodeURIComponent(p.slug) + '">Own this image? Request a takedown</a></p></form>';
+    var f = document.getElementById("report-form");
+    f.onsubmit = function (e) {
+      e.preventDefault();
+      var btn = f.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Sending…";
+      Studio.report({ image_id: p.id, character_slug: p.slug, image_url: absUrl(p.src), reason: f.reason.value, details: f.details.value })
+        .then(function (r) {
+          wrap.innerHTML = '<div class="report-box done"><b>' + (r === "already" ? "You already reported this image." : "Thanks, we got your report.") + '</b>' +
+            '<p>We review every report. If it breaks our <a href="content-policy.html">Content Policy</a>, it comes down.</p></div>';
+        }, function (x) {
+          btn.disabled = false; btn.textContent = "Send report";
+          var er = f.querySelector(".err") || f.insertBefore(Object.assign(document.createElement("p"), { className: "err" }), f.querySelector(".muted"));
+          er.textContent = x.message || "Couldn't send. Please try again.";
+        });
+    };
+    f.querySelector("[data-report-cancel]").onclick = function () {
+      wrap.innerHTML = '<button class="linkbtn report-link" data-report="' + esc(p.id) + '">' + ICON.flag + 'Report this image</button>';
+    };
+  });
+}
+document.addEventListener("click", function (e) {
+  var r = e.target.closest("[data-report]"); if (r) { e.preventDefault(); openReport(r.dataset.report); return; }
+  var cp = e.target.closest("[data-copy-recipe]");
+  if (cp) {
+    var txt = cp.parentNode.querySelector("p").textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { cp.textContent = "Copied"; }, function () {});
+  }
+});
+
 function closePin() { var b = document.getElementById("closeup"); if (b) b.classList.remove("open"); document.body.style.overflow = ""; }
 document.addEventListener("click", function (e) { if (e.target.id === "closeup") closePin(); });
 document.addEventListener("keydown", function (e) { if (e.key === "Escape") closePin(); });
 
 // Load every character's live images once; pages render from this.
 function loadAllLive() {
-  return Studio.ready.then(function () {
+  return Promise.all([Studio.ready, Social.ready]).then(function () {
     return Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); }));
   }).then(function (lists) {
     var out = {};
@@ -244,7 +369,8 @@ function loadAllLive() {
 
 // ---------- Masonry with big images ----------
 // Few, wide columns so every image is large. On the homepage no two pins from the same character
-// touch (side by side or stacked). Pass {mixed:false} on single-character pages to skip that rule.
+// touch (side by side or stacked). Pass {mixed:false} on single-character pages to skip that rule,
+// and {ordered:true} to keep pins as close as possible to the order given (the personal homepage feed).
 function colCount(w) { return w < 560 ? 1 : w < 900 ? 2 : Math.min(4, Math.max(2, Math.floor((w + 20) / (320 + 20)))); }
 function layoutPins(el, pins, opts) {
   opts = opts || {};
@@ -297,8 +423,11 @@ function drawPins(el, pins, opts) {
     }
     return { col: col, clashes: total };
   }
-  var res = attempt(false);
-  for (var t = 0; mixed && t < 1500 && res.clashes > 0; t++) { var r2 = attempt(true); if (r2.clashes < res.clashes) res = r2; }
+  var res = opts.ordered ? orderedLayout(pins, cols, ratio, meta, pad) : null;
+  if (!res) {
+    res = attempt(false);
+    for (var t = 0; mixed && t < 1500 && res.clashes > 0; t++) { var r2 = attempt(true); if (r2.clashes < res.clashes) res = r2; }
+  }
   el._cols = cols;
   el.classList.add("pins-cols");
   el.style.setProperty("--cols", cols);
@@ -306,4 +435,54 @@ function drawPins(el, pins, opts) {
     return '<div class="pcol">' + x.items.map(function (it, i) { return pinHtml(it.p, i); }).join("") + '</div>';
   }).join("");
   fillAvatars(el);
+  if (window.Feed) Feed.watch(el);
+}
+
+// Ordered feed layout. Pins fill the shortest column one at a time, in feed order. When the next pin would
+// sit beside or under a pin of the same character, the next one in line that fits goes there instead, and
+// if a dead end is reached it steps back and tries again. So the feed order is kept as far as the
+// "never adjacent" rule allows. Returns null if no clean layout is found quickly (the caller then uses the
+// classic layout).
+function orderedLayout(pins, cols, ratio, meta, pad) {
+  var col = [], left = pins.slice(), budget = 20000;
+  for (var k = 0; k < cols; k++) col.push({ h: 0, items: [] });
+  function touches(slug, c, top, bot) {
+    var me = col[c].items[col[c].items.length - 1];
+    if (me && me.slug === slug) return 2;
+    var near = 0;
+    for (var j = c - 1; j <= c + 1; j += 2) {
+      if (j < 0 || j >= cols) continue;
+      for (var i = 0; i < col[j].items.length; i++) {
+        var it = col[j].items[i]; if (it.slug !== slug) continue;
+        if (it.top < bot && it.bot > top) return 2;                       // side by side
+        if (it.top < bot + pad && it.bot + pad > top) near = 1;            // corner to corner: allowed, avoided if cheap
+      }
+    }
+    return near;
+  }
+  function place() {
+    if (!left.length) return true;
+    if (--budget < 0) return false;
+    var c = 0; col.forEach(function (x, j) { if (x.h < col[c].h - 0.001) c = j; });
+    var top = col[c].h, tries = [];
+    left.forEach(function (p, i) {
+      var bot = top + ratio(p) + meta, t = touches(p.slug, c, top, bot);
+      if (t < 2) tries.push({ i: i, p: p, bot: bot, cost: i + t * 0.5 });
+    });
+    tries.sort(function (a, b) { return a.cost - b.cost; });
+    var seenSlug = {};
+    for (var n = 0; n < tries.length; n++) {
+      var tr = tries[n];
+      if (seenSlug[tr.p.slug + "|" + tr.bot.toFixed(3)]) continue;     // same character and shape: same outcome
+      seenSlug[tr.p.slug + "|" + tr.bot.toFixed(3)] = 1;
+      left.splice(tr.i, 1);
+      col[c].items.push({ slug: tr.p.slug, p: tr.p, top: top, bot: tr.bot }); col[c].h = tr.bot;
+      if (place()) return true;
+      col[c].items.pop(); col[c].h = top;
+      left.splice(tr.i, 0, tr.p);
+      if (budget < 0) return false;
+    }
+    return false;
+  }
+  return place() ? { col: col, clashes: 0 } : null;
 }
