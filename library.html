@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library — Persona</title>
+<meta name="description" content="Persona House fashion library: popular looks broken into reusable JSON blocks for face, body, hair, outfit, camera, light, location, scene, motion, mood and pose.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="lib">
+  <div class="lib-head">
+    <h1>Library</h1>
+    <p>Popular looks, broken into blocks you can copy into Studio. Open any block to see its JSON.</p>
+    <details class="lib-rights">
+      <summary>Where these come from</summary>
+      <p>Each look was studied from a public Pinterest pin with lots of saves. The photo stays on Pinterest and is shown with Pinterest's own embed, with a link back to the pin. What we store is our own written description of the outfit, scene, camera, light and mood. Faces are invented: the face block never describes the person in the photo.</p>
+    </details>
+  </div>
+  <div class="lib-tools">
+    <input id="lib-q" type="search" placeholder="Search looks: trench, red, night, Paris…" autocomplete="off" aria-label="Search the library">
+    <div class="chips" id="lib-chips"></div>
+  </div>
+  <p class="lib-count" id="lib-count"></p>
+  <div class="lib-grid" id="lib-grid"></div>
+  <div class="lib-more"><button class="chip" id="lib-more" hidden>Show more looks</button></div>
+</main>
+
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a></span>
+  <span>Reference photos © their owners, shown via Pinterest.</span>
+</footer>
+
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script src="search.js"></script>
+<script src="library.js"></script>
+</body>
+</html>
