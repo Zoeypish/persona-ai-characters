@@ -1,0 +1,28 @@
+{
+  "about": "Prompt building blocks for character images that look great on Persona and work with Shop the look. Replace {identity} with the same sentence every time.",
+  "identity_sentence": {
+    "how_to": "Write one sentence that describes the face, hair and signature detail. Paste it, word for word, into every prompt. This is the biggest secret to a consistent character.",
+    "example": "a woman in her mid 20s with a jet-black blunt bob with short fringe, warm olive skin, a small beauty mark under her left eye and a chrome star ear cuff"
+  },
+  "shots": [
+    { "name": "Outfit hero", "why": "Full outfit visible, so Shop the look can match every piece.",
+      "prompt": "Full-body photo of {identity}, wearing {outfit}, standing in {place}, natural light, 35mm photo, portrait orientation" },
+    { "name": "Portrait", "why": "Lets followers learn the face.",
+      "prompt": "Close portrait of {identity}, {top}, soft window light, plain background, editorial beauty photo" },
+    { "name": "Street style", "why": "Feels like a real moment, great on the homepage.",
+      "prompt": "Candid street-style photo of {identity} walking in {city}, wearing {outfit}, shot from across the street, shallow depth of field, portrait orientation" },
+    { "name": "At home", "why": "Shows personality and the world around the character.",
+      "prompt": "{identity} at home {doing a hobby}, wearing {outfit}, warm lamp light, full outfit visible, lifestyle photo" },
+    { "name": "Mirror selfie", "why": "Natural way to show a full look.",
+      "prompt": "Mirror selfie of {identity} in a minimal apartment, phone covering part of the face, wearing {outfit}, full length, soft daylight" },
+    { "name": "Detail", "why": "Close-up on a bag, shoes or jewellery that people want to buy.",
+      "prompt": "Close-up detail photo of {identity}'s {item}, {outfit colour} outfit in soft focus behind, magazine product photo" }
+  ],
+  "quality_words": ["35mm film photo", "natural light", "soft grain", "editorial", "shallow depth of field", "portrait orientation"],
+  "avoid_words": ["text", "watermark", "logo", "collage", "extra fingers", "a real celebrity's name"],
+  "settings": {
+    "openai_gpt_image": { "size": "1024x1536", "quality": "high" },
+    "midjourney": "--ar 2:3 --style raw, reuse the same --cref image of your character",
+    "other_tools": "Portrait 2:3 or 4:5, at least 1200 px on the long side"
+  }
+}
