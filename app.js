@@ -17,15 +17,13 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
 (function header() {
   var el = document.getElementById("nav");
   if (!el) return;
-  var opts = CHARACTERS.map(function (c) { return '<option value="' + esc(c.name) + '">'; }).join("");
   el.className = "nav";
   el.innerHTML =
     '<a class="wordmark" href="./" aria-label="Persona home">' + MARK + '<span>Persona</span></a>' +
     '<div class="nav-right">' +
       '<form class="search" role="search" id="search-form">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
-        '<input id="search" type="search" placeholder="Search characters, looks, creators" list="search-list" autocomplete="off" aria-label="Search characters">' +
-        '<datalist id="search-list">' + opts + '</datalist>' +
+        '<input id="search" type="search" placeholder="Search names, styles, brands" autocomplete="off" aria-label="Search">' +
       '</form>' +
       '<a class="nav-saved" href="saved.html" aria-label="Saved">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Saved</span></a>' +
       '<a class="nav-signin" id="nav-me" href="login.html">Sign in</a>' +
@@ -39,16 +37,7 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
     me.className = "avatar"; me.href = "studio.html"; me.title = name; me.setAttribute("aria-label", "Your studio (" + name + ")");
     me.innerHTML = u.avatar ? '<img src="' + esc(u.avatar) + '" alt="" referrerpolicy="no-referrer">' : esc(initials || "?");
   }).catch(function () {});
-  document.getElementById("search-form").onsubmit = function (e) {
-    e.preventDefault();
-    var q = document.getElementById("search").value.trim().toLowerCase();
-    if (!q) return;
-    var hit = CHARACTERS.filter(function (c) {
-      return (c.name + " " + c.handle + " " + c.category + " " + c.origin + " " + c.creator).toLowerCase().indexOf(q) > -1;
-    })[0];
-    if (hit) location.href = "profile.html?c=" + hit.slug;
-    else document.getElementById("search").value = "", document.getElementById("search").placeholder = "No match for “" + q + "”";
-  };
+  // Typing in the search box and its suggestions are handled in search.js.
 })();
 
 // ---------- Save, follow, shop ----------
