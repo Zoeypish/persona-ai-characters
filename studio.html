@@ -23,6 +23,7 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <a class="btn" href="connect.html">Connect AI</a>
       <a class="btn ghost" href="tips.html">Tips</a>
+      <a class="btn ghost" id="review-link" href="review.html" hidden>Review reports</a>
       <a class="btn ghost" id="view" href="#">View public profile</a>
       <button class="btn ghost" id="out">Sign out</button>
     </div>
@@ -53,6 +54,14 @@
       <span id="first-sub">Optional. These go live on the homepage right away.</span>
     </label>
     <div class="newchar-thumbs" id="first-thumbs"></div>
+    <div class="origin-fields">
+      <input id="n-tool" list="ai-tools" maxlength="80" placeholder="Made with (e.g. Midjourney)" aria-label="AI tool used">
+      <input id="n-recipe" maxlength="4000" placeholder="Prompt or recipe (optional, shown with the image)" aria-label="Prompt or recipe">
+    </div>
+    <label class="rights" id="newchar-rights-box">
+      <input type="checkbox" id="newchar-rights">
+      <span>This is an AI character I made. It isn't a real person, and it doesn't copy anyone's face or likeness without their consent. I own or have the rights to every image I add. <a href="content-policy.html" target="_blank">Content Policy</a></span>
+    </label>
     <div class="newchar-row">
       <button class="btn" type="submit" id="newchar-go">Create character</button>
       <button class="btn ghost" type="button" id="newchar-cancel">Cancel</button>
@@ -60,6 +69,15 @@
     </div>
   </form>
 
+  <datalist id="ai-tools"><option value="Midjourney"><option value="ChatGPT / DALL·E"><option value="Stable Diffusion"><option value="Flux"><option value="Adobe Firefly"><option value="Google Imagen"><option value="Ideogram"><option value="Leonardo"><option value="Krea"></datalist>
+  <div class="origin-fields" id="origin-box">
+    <input id="o-tool" list="ai-tools" maxlength="80" placeholder="Made with (e.g. Midjourney)" aria-label="AI tool used">
+    <input id="o-recipe" maxlength="4000" placeholder="Prompt or recipe (optional, shown with the image)" aria-label="Prompt or recipe">
+  </div>
+  <label class="rights" id="rights-box">
+    <input type="checkbox" id="rights">
+    <span>I own or have the rights to these images, and they don't show a real person without their consent. <a href="content-policy.html" target="_blank">Content Policy</a></span>
+  </label>
   <label class="drop" id="drop">
     <input type="file" id="file" accept="image/*" multiple hidden>
     <strong>Upload images</strong>
@@ -71,7 +89,7 @@
   <p class="note" id="mode"></p>
 </main>
 <footer>
-  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="tips.html">Tips</a></span>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="tips.html">Tips</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a></span>
   <span>Images © their creators.</span>
 </footer>
 <script src="vendor/supabase-js-2.119.0.js"></script>
@@ -80,13 +98,15 @@
 <script src="data.js"></script>
 <script src="store.js"></script>
 <script src="app.js"></script>
+<script src="search.js"></script>
 <script src="lib/shot.js"></script>
 <script src="studio-registry.js"></script>
 <script>
   var current = null, user = null, mine = [];
   function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
 
-  var MAIN = ["allowance", "drop", "grid"];
+  var MAIN = ["allowance", "origin-box", "rights-box", "drop", "grid"];
+  function originOf(t, r) { return { tool: document.getElementById(t).value, recipe: document.getElementById(r).value }; }
   function showMain(on) {
     MAIN.forEach(function (id) { document.getElementById(id).hidden = !on; });
     document.querySelector(".studio-bar").hidden = !on;
@@ -99,6 +119,7 @@
     if (!s) { location.href = "login.html"; return; }
     user = s;
     document.getElementById("studio").hidden = false;
+    Studio.isAdmin().then(function (a) { document.getElementById("review-link").hidden = !a; });
     document.getElementById("who").textContent = "Signed in as " + (s.name || s.email);
     if (Studio.mode === "demo") document.getElementById("mode").textContent =
       "Demo mode: uploads and choices are saved in this browser only. Connect Supabase to save them for everyone.";
@@ -152,9 +173,14 @@
       if (window.StudioPlus) StudioPlus.show(c, list);
       var grid = document.getElementById("grid");
       if (!list.length) { grid.innerHTML = '<p class="empty" style="grid-column:1/-1">No images yet. Upload the first ones above.</p>'; return; }
+      var MOD = { review: "Under review", removed: "Removed by Persona" };
       grid.innerHTML = list.map(function (im, i) {
-        return '<div class="sitem' + (im.live ? "" : " off") + '"><div class="tile">' + tileImg(im, c.name) + '</div>' +
-          '<div class="sitem-row"><label class="toggle"><input type="checkbox" data-i="' + i + '"' + (im.live ? " checked" : "") + '> ' + (im.live ? "Live" : "Hidden") + '</label>' +
+        var mod = MOD[im.moderation];
+        return '<div class="sitem' + (im.live && !mod ? "" : " off") + '"><div class="tile">' + tileImg(im, c.name) +
+          (mod ? '<span class="mod-tag' + (im.moderation === "removed" ? " removed" : "") + '" title="' + (im.moderation === "removed"
+            ? "Taken down after a report. It isn't shown anywhere on Persona."
+            : "Reported by several people. Hidden from everyone until Persona reviews it.") + '">' + mod + '</span>' : '') + '</div>' +
+          '<div class="sitem-row"><label class="toggle"><input type="checkbox" data-i="' + i + '"' + (im.live ? " checked" : "") + (im.moderation === "removed" ? " disabled" : "") + '> ' + (im.live ? "Live" : "Hidden") + '</label>' +
           (im.uploaded ? '<button class="linkbtn" data-del="' + i + '">Delete</button>' : '<span class="badge">Featured</span>') + '</div></div>';
       }).join("");
       grid.querySelectorAll("input[type=checkbox]").forEach(function (cb) {
@@ -166,12 +192,19 @@
     });
   }
 
+  function needRights(boxId, inputId) {
+    if (document.getElementById(inputId).checked) return false;
+    var box = document.getElementById(boxId); box.classList.remove("need"); void box.offsetWidth; box.classList.add("need");
+    return true;
+  }
   function handle(fileList) {
     var files = Array.prototype.slice.call(fileList);
+    if (needRights("rights-box", "rights")) { document.getElementById("mode").textContent = "Tick the box above to confirm you have the rights to these images."; return; }
+    document.getElementById("mode").textContent = "";
     Studio.quota().then(function (q) {
       var take = files.slice(0, q.left);
       if (!take.length) return;
-      return Studio.upload(bySlug(current), take);
+      return Studio.upload(bySlug(current), take, false, true, originOf("o-tool", "o-recipe"));
     }).then(load).catch(function (e) { document.getElementById("mode").textContent = "Upload failed: " + e.message; });
   }
   // ---------- Create a character ----------
@@ -223,12 +256,14 @@
   form.onsubmit = function (e) {
     e.preventDefault();
     var err = document.getElementById("newchar-err"), btn = document.getElementById("newchar-go");
-    err.textContent = ""; btn.disabled = true; btn.textContent = "Creating…";
+    err.textContent = "";
+    if (needRights("newchar-rights-box", "newchar-rights")) { err.textContent = "Please tick the box to confirm your character follows the Content Policy."; return; }
+    btn.disabled = true; btn.textContent = "Creating…";
     var files = firstFiles.slice();
-    Studio.createCharacter({ name: form.name.value, handle: form.handle.value, bio: form.bio.value, avatar: avaFile }, user)
+    Studio.createCharacter({ name: form.name.value, handle: form.handle.value, bio: form.bio.value, avatar: avaFile, rights: true }, user)
       .then(function (c) {
         mine.unshift(c.slug); current = c.slug;
-        return (files.length ? Studio.upload(c, files, true) : Promise.resolve()).then(function () { closeCreate(); renderTabs(); load(); });
+        return (files.length ? Studio.upload(c, files, true, true, originOf("n-tool", "n-recipe")) : Promise.resolve()).then(function () { closeCreate(); renderTabs(); load(); });
       })
       .catch(function (x) { err.textContent = (x && x.message) || "Something went wrong. Please try again."; })
       .then(function () { btn.disabled = false; btn.textContent = "Create character"; });

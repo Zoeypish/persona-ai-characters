@@ -23,7 +23,7 @@
 </main>
 
 <footer>
-  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a></span>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a></span>
   <span>Images © their creators.</span>
 </footer>
 
@@ -33,12 +33,13 @@
 <script src="data.js"></script>
 <script src="store.js"></script>
 <script src="app.js"></script>
+<script src="search.js"></script>
 <script>
   var tab = "pins";
   function render() {
     var el = document.getElementById("body");
     if (tab === "pins") {
-      var s = Social.saved();
+      var s = Social.saved().filter(function (p) { return !Studio.isHidden(p.id); }); // hide anything taken down
       el.innerHTML = s.length ? '<div class="pins" id="pins"></div>'
         : '<p class="empty-pins">Nothing saved yet.</p><p class="center"><a class="pill dark" href="./">Explore</a></p>';
       if (s.length) layoutPins(document.getElementById("pins"), s);
