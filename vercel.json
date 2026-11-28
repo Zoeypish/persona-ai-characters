@@ -2,5 +2,14 @@
   "cleanUrls": false,
   "headers": [
     { "source": "/images/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+  ],
+  "functions": {
+    "api/cron/*.js": { "maxDuration": 300 },
+    "api/go.js": { "maxDuration": 10 },
+    "api/postback.js": { "maxDuration": 10 }
+  },
+  "crons": [
+    { "path": "/api/cron/refresh-products", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/match-looks", "schedule": "30 8 * * *" }
   ]
 }
