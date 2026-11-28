@@ -403,3 +403,31 @@ footer { padding: 20px var(--gutter); font-size: 11px; }
   .pin-media { border-radius: 16px; }
   .pin-over .save-btn { height: 38px; padding: 0 16px; font-size: 14px; }
 }
+
+/* ---------- Studio: create a character ---------- */
+.tabs .tab-new { color: var(--ink); font-weight: 500; }
+.newchar { max-width: 760px; margin-bottom: 40px; }
+.newchar h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 44px); line-height: 1.05; margin-bottom: 24px; }
+.newchar-body { display: flex; gap: 28px; align-items: flex-start; margin-bottom: 24px; }
+.newchar-ava { flex: none; cursor: pointer; }
+.newchar-ava-img { display: grid; place-items: center; width: 148px; height: 148px; border-radius: 50%; overflow: hidden; background: var(--tile);
+  border: 1px dashed #bdbdbd; color: var(--muted); font-size: 13px; transition: border-color .2s; }
+.newchar-ava:hover .newchar-ava-img { border-color: var(--ink); color: var(--ink); }
+.newchar-ava-img img { width: 100%; height: 100%; object-fit: cover; }
+.newchar-fields { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.newchar-fields input, .newchar-fields textarea { width: 100%; border: 0; border-bottom: 1px solid var(--line); padding: 10px 0; font: 400 15px var(--sans);
+  color: var(--ink); background: transparent; resize: vertical; outline: none; }
+.newchar-fields input:focus, .newchar-fields textarea:focus { border-bottom-color: var(--ink); }
+.newchar-fields .newchar-name { font-family: var(--serif); font-size: 34px; line-height: 1.1; padding: 4px 0 8px; }
+.newchar-drop { margin-bottom: 16px; }
+.newchar-thumbs { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.newchar-thumb { position: relative; width: 120px; height: 150px; background: var(--tile); overflow: hidden; }
+.newchar-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.newchar-thumb button { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(255,255,255,.92);
+  font-size: 16px; line-height: 1; cursor: pointer; }
+.newchar-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.newchar .err { color: #b00020; font-size: 13px; }
+@media (max-width: 560px) {
+  .newchar-body { flex-direction: column; align-items: center; gap: 20px; }
+  .newchar-fields { width: 100%; }
+}

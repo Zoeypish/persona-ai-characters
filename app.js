@@ -173,7 +173,7 @@ document.addEventListener("click", function (e) {
 // Pin closeup
 function openPin(id) {
   var p = PINS[id]; if (!p) return;
-  var c = charBySlug(p.slug), saved = Social.isSaved(p.id);
+  var c = charBySlug(p.slug) || { name: "", creator: "", slug: p.slug }, saved = Social.isSaved(p.id);
   var credit = p.creditUrl ? 'Image via <a href="' + p.creditUrl + '" target="_blank" rel="noopener">' + esc(p.credit) + '</a> · © ' + esc(c.creator) : (p.credit ? esc(p.credit) : "");
   var box = document.getElementById("closeup") || document.body.appendChild(Object.assign(document.createElement("div"), { id: "closeup", className: "closeup" }));
   box.innerHTML =
@@ -225,9 +225,14 @@ document.addEventListener("keydown", function (e) { if (e.key === "Escape") clos
 
 // Load every character's live images once; pages render from this.
 function loadAllLive() {
-  return Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); })).then(function (lists) {
+  return Studio.ready.then(function () {
+    return Promise.all(CHARACTERS.map(function (c) { return Studio.liveFor(c); }));
+  }).then(function (lists) {
     var out = {};
-    lists.forEach(function (l, i) { var c = CHARACTERS[i]; out[c.slug] = l.map(function (im) { return toPin(c, im); }); if (l[0]) AVATARS[c.slug] = l[0].src; });
+    lists.forEach(function (l, i) {
+      var c = CHARACTERS[i]; out[c.slug] = l.map(function (im) { return toPin(c, im); });
+      if (c.avatar) AVATARS[c.slug] = c.avatar; else if (l[0]) AVATARS[c.slug] = l[0].src;
+    });
     return out;
   });
 }

@@ -73,8 +73,95 @@
     });
   }
 
+  // ---------- characters made by creators (Supabase table "characters", or this browser in demo mode) ----------
+  var LOCAL_CHARS = "persona-characters-v1";
+  var BUILT_IN = (window.CHARACTERS || []).map(function (c) { return c.slug; });
+  function slugify(s) {
+    return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  }
+  function fromRow(r) {
+    return { slug: r.slug, name: r.name, handle: r.handle || "", bio: r.bio ? String(r.bio).split(/\n\s*\n/).filter(Boolean) : [],
+      tagline: "", origin: "", category: "", knownFor: [], link: "", creator: r.creator_name || "", since: String(new Date(r.created_at || Date.now()).getFullYear()),
+      audience: "New on Persona", avatar: r.avatar_url || "", owner: r.owner, builtIn: 0, userMade: true };
+  }
+  function addChars(rows) {
+    rows.forEach(function (r) {
+      var c = fromRow(r);
+      if (!window.CHARACTERS.some(function (x) { return x.slug === c.slug; })) window.CHARACTERS.push(c);
+    });
+    return window.CHARACTERS;
+  }
+  function loadCharacters() {
+    if (sb) return sb.from("characters").select("*").order("created_at").then(function (r) {
+      if (r.error) { console.warn("Creator characters not loaded:", r.error.message); return window.CHARACTERS; }
+      return addChars(r.data || []);
+    }, function () { return window.CHARACTERS; });
+    return Promise.resolve(addChars(readJSON(LOCAL_CHARS) || []));
+  }
+  // Shrinks a photo to at most `max` px on its long side, as a JPEG.
+  function shrink(file, max) {
+    return new Promise(function (res) {
+      if (!file || !/^image\//.test(file.type)) return res(null);
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        var cv = document.createElement("canvas"); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+        cv.toBlob(function (b) { res(b || file); }, "image/jpeg", 0.88);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); res(file); };
+      img.src = url;
+    });
+  }
+  function blobToDataUrl(b) {
+    return new Promise(function (res) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = function () { res(""); }; fr.readAsDataURL(b); });
+  }
+  function freeSlug(name) {
+    var base = slugify(name) || "character", s = base, n = 2;
+    while (BUILT_IN.indexOf(s) > -1 || window.CHARACTERS.some(function (c) { return c.slug === s; })) s = base + "-" + n++;
+    return s;
+  }
+
   window.Studio = {
     mode: mode,
+    // Every page waits for this before reading CHARACTERS, so creator-made characters are included.
+    ready: loadCharacters(),
+    slugify: slugify,
+    // fields: {name, handle, bio, avatar (File)}. Returns the new character. The account that creates it owns it.
+    createCharacter: function (fields, user) {
+      var name = String(fields.name || "").trim().slice(0, 60);
+      if (!name) return Promise.reject(new Error("Give your character a name."));
+      if (!user) return Promise.reject(new Error("Please sign in again."));
+      var slug = freeSlug(name);
+      var handle = String(fields.handle || "").trim().replace(/^@?/, "@").slice(0, 40);
+      if (handle === "@") handle = "@" + slug.replace(/-/g, "");
+      var row = { slug: slug, name: name, handle: handle, bio: String(fields.bio || "").trim().slice(0, 600), creator_name: user.name || "", owner: user.id };
+      return shrink(fields.avatar, 800).then(function (blob) {
+        if (sb) {
+          var up = Promise.resolve();
+          if (blob) {
+            var path = slug + "/avatar-" + Date.now() + ".jpg";
+            up = sb.storage.from(BUCKET).upload(path, blob, { contentType: "image/jpeg" }).then(function (r) {
+              if (r.error) throw r.error;
+              row.avatar_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl; row.avatar_path = path;
+            });
+          }
+          return up.then(function () { return sb.from("characters").insert(row).select().single(); }).then(function (r) {
+            if (r.error) {
+              if (/relation .*characters.* does not exist|schema cache/i.test(r.error.message)) throw new Error("Creating characters isn't switched on yet. Run supabase/create-characters.sql in Supabase first.");
+              throw new Error(r.error.code === "23505" ? "That name is taken. Try another one." : r.error.message);
+            }
+            return addChars([r.data]) && window.CHARACTERS.filter(function (c) { return c.slug === slug; })[0];
+          });
+        }
+        return (blob ? blobToDataUrl(blob) : Promise.resolve("")).then(function (data) {
+          row.avatar_url = data; row.created_at = new Date().toISOString();
+          var list = readJSON(LOCAL_CHARS) || []; list.push(row); writeJSON(LOCAL_CHARS, list);
+          addChars([row]);
+          return window.CHARACTERS.filter(function (c) { return c.slug === slug; })[0];
+        });
+      });
+    },
     all: function (c) { return rowsFor(c).then(function (rows) { return merge(c, rows); }); },
     liveFor: function (c) { return Studio.all(c).then(function (l) { return l.filter(function (im) { return im.live; }); }); },
 
@@ -83,7 +170,7 @@
       var m = readJSON(LIVE_KEY) || {}; m[id] = !!on; writeJSON(LIVE_KEY, m); return Promise.resolve();
     },
 
-    upload: function (c, files) {
+    upload: function (c, files, live) {
       var now = Date.now();
       var list = Array.prototype.slice.call(files).filter(function (f) { return /^image\//.test(f.type); });
       if (sb) {
@@ -93,10 +180,11 @@
           return sb.storage.from(BUCKET).upload(path, f, { contentType: f.type }).then(function (r) {
             if (r.error) throw r.error;
             var url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-            return sb.from("images").insert({ id: id, character_slug: c.slug, url: url, path: path, live: false });
+            return sb.from("images").insert({ id: id, character_slug: c.slug, url: url, path: path, live: !!live });
           });
         }));
       }
+      if (live) { var lm = readJSON(LIVE_KEY) || {}; list.forEach(function (f, i) { lm["up-" + now + "-" + i] = true; }); writeJSON(LIVE_KEY, lm); }
       return tx("readwrite", function (st) {
         list.forEach(function (f, i) { st.put({ id: "up-" + now + "-" + i, slug: c.slug, name: f.name, blob: f, created: now + i }); });
       });
@@ -128,7 +216,9 @@
         return sb.from("creators").select("characters").eq("id", u.id).maybeSingle()
           .then(function (r) { return (r.data && r.data.characters) || []; });
       });
-      return Studio.session().then(function (u) { return u ? CREATOR.characters.slice() : []; });
+      return Studio.session().then(function (u) {
+        return u ? CREATOR.characters.concat((readJSON(LOCAL_CHARS) || []).map(function (r) { return r.slug; })) : [];
+      });
     },
     signInWithGoogle: function () {
       if (sb) return sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, "") + "studio.html" } });

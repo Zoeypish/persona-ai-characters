@@ -29,6 +29,32 @@
 
   <div class="tabs" id="tabs"></div>
 
+  <form class="newchar" id="newchar" hidden autocomplete="off">
+    <h2 id="newchar-title">New character</h2>
+    <div class="newchar-body">
+      <label class="newchar-ava" id="ava-pick" title="Choose a profile photo">
+        <input type="file" id="ava-file" accept="image/*" hidden>
+        <span class="newchar-ava-img" id="ava-img"><span>+ Photo</span></span>
+      </label>
+      <div class="newchar-fields">
+        <input class="newchar-name" name="name" required maxlength="60" placeholder="Character name" aria-label="Character name">
+        <input name="handle" maxlength="40" placeholder="@handle" aria-label="Handle">
+        <textarea name="bio" rows="3" maxlength="600" placeholder="Short bio (optional)" aria-label="Short bio"></textarea>
+      </div>
+    </div>
+    <label class="drop newchar-drop" id="first-drop">
+      <input type="file" id="first-file" accept="image/*" multiple hidden>
+      <strong>First images</strong>
+      <span id="first-sub">Optional. These go live on the homepage right away.</span>
+    </label>
+    <div class="newchar-thumbs" id="first-thumbs"></div>
+    <div class="newchar-row">
+      <button class="btn" type="submit" id="newchar-go">Create character</button>
+      <button class="btn ghost" type="button" id="newchar-cancel">Cancel</button>
+      <span class="err" id="newchar-err" role="alert"></span>
+    </div>
+  </form>
+
   <label class="drop" id="drop">
     <input type="file" id="file" accept="image/*" multiple hidden>
     <strong>Upload images</strong>
@@ -37,7 +63,6 @@
 
   <div class="studio-bar"><span id="count"></span><span>Switch on to publish</span></div>
   <div class="sgrid" id="grid"></div>
-  <p class="empty" id="none" hidden>Your account doesn't have a character yet. Once your character is set up and linked to this Google account, you'll manage its images here.</p>
   <p class="note" id="mode"></p>
 </main>
 <footer>
@@ -54,7 +79,15 @@
   var current = null, user = null, mine = [];
   function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
 
-  Studio.session().then(function (s) {
+  var MAIN = ["allowance", "drop", "grid"];
+  function showMain(on) {
+    MAIN.forEach(function (id) { document.getElementById(id).hidden = !on; });
+    document.querySelector(".studio-bar").hidden = !on;
+    document.getElementById("view").hidden = !on;
+  }
+
+  Promise.all([Studio.session(), Studio.ready]).then(function (r) {
+    var s = r[0];
     if (!s) { location.href = "login.html"; return; }
     user = s;
     document.getElementById("studio").hidden = false;
@@ -63,13 +96,7 @@
       "Demo mode: uploads and choices are saved in this browser only. Connect Supabase to save them for everyone.";
     return Studio.myCharacters().then(function (list) {
       mine = list.filter(bySlug);
-      if (!mine.length) {
-        ["allowance", "tabs", "drop", "grid"].forEach(function (id) { document.getElementById(id).hidden = true; });
-        document.querySelector(".studio-bar").hidden = true;
-        document.getElementById("view").hidden = true;
-        document.getElementById("none").hidden = false;
-        return;
-      }
+      if (!mine.length) { renderTabs(); openCreate(true); return; }
       current = mine[0]; renderTabs(); load();
     });
   });
@@ -78,11 +105,15 @@
 
   function renderTabs() {
     // Only the characters this account owns.
+    var creating = !document.getElementById("newchar").hidden;
     document.getElementById("tabs").innerHTML = mine.map(function (s) {
       var c = bySlug(s);
-      return '<button data-s="' + s + '" class="' + (s === current ? "on" : "") + '">' + esc(c.name) + '</button>';
-    }).join("");
-    document.querySelectorAll("#tabs button").forEach(function (b) { b.onclick = function () { current = b.dataset.s; renderTabs(); load(); }; });
+      return '<button data-s="' + s + '" class="' + (s === current && !creating ? "on" : "") + '">' + esc(c.name) + '</button>';
+    }).join("") + '<button data-new class="tab-new' + (creating ? " on" : "") + '">+ New character</button>';
+    document.querySelectorAll("#tabs button[data-s]").forEach(function (b) {
+      b.onclick = function () { current = b.dataset.s; closeCreate(); renderTabs(); load(); };
+    });
+    document.querySelector("#tabs [data-new]").onclick = function () { openCreate(false); };
   }
 
   function renderAllowance(q) {
@@ -134,6 +165,66 @@
       return Studio.upload(bySlug(current), take);
     }).then(load).catch(function (e) { document.getElementById("mode").textContent = "Upload failed: " + e.message; });
   }
+  // ---------- Create a character ----------
+  var form = document.getElementById("newchar"), avaFile = null, firstFiles = [], firstLeft = 0;
+  function openCreate(first) {
+    form.hidden = false; showMain(false);
+    document.getElementById("newchar-title").textContent = first ? "Create your character" : "New character";
+    document.getElementById("newchar-cancel").hidden = first;
+    renderTabs();
+    Studio.quota().then(function (q) {
+      firstLeft = q.left;
+      document.getElementById("first-sub").textContent = q.left
+        ? "Optional. Up to " + q.left + ". These go live on the homepage right away."
+        : "You've used all your uploads. You can add images later as you earn points.";
+      document.getElementById("first-drop").classList.toggle("locked", !q.left);
+      document.getElementById("first-file").disabled = !q.left;
+    });
+    form.name.focus();
+  }
+  function closeCreate() {
+    form.hidden = true; form.reset(); avaFile = null; firstFiles = [];
+    document.getElementById("ava-img").innerHTML = "<span>+ Photo</span>";
+    document.getElementById("first-thumbs").innerHTML = "";
+    document.getElementById("newchar-err").textContent = "";
+    if (mine.length) showMain(true);
+  }
+  function thumb(f) { return URL.createObjectURL(f); }
+  document.getElementById("ava-file").onchange = function (e) {
+    var f = e.target.files[0]; if (!f) return; avaFile = f;
+    document.getElementById("ava-img").innerHTML = '<img src="' + thumb(f) + '" alt="">';
+  };
+  function addFirst(list) {
+    Array.prototype.slice.call(list).filter(function (f) { return /^image\//.test(f.type); }).forEach(function (f) {
+      if (firstFiles.length < firstLeft) firstFiles.push(f);
+    });
+    document.getElementById("first-thumbs").innerHTML = firstFiles.map(function (f, i) {
+      return '<span class="newchar-thumb"><img src="' + thumb(f) + '" alt=""><button type="button" data-rm="' + i + '" aria-label="Remove">×</button></span>';
+    }).join("");
+    document.querySelectorAll("[data-rm]").forEach(function (b) {
+      b.onclick = function () { firstFiles.splice(+b.dataset.rm, 1); addFirst([]); };
+    });
+  }
+  document.getElementById("first-file").onchange = function (e) { addFirst(e.target.files); e.target.value = ""; };
+  var fdrop = document.getElementById("first-drop");
+  ["dragenter", "dragover"].forEach(function (ev) { fdrop.addEventListener(ev, function (e) { e.preventDefault(); fdrop.classList.add("over"); }); });
+  ["dragleave", "drop"].forEach(function (ev) { fdrop.addEventListener(ev, function (e) { e.preventDefault(); fdrop.classList.remove("over"); }); });
+  fdrop.addEventListener("drop", function (e) { if (!document.getElementById("first-file").disabled) addFirst(e.dataTransfer.files); });
+  document.getElementById("newchar-cancel").onclick = function () { closeCreate(); renderTabs(); };
+  form.onsubmit = function (e) {
+    e.preventDefault();
+    var err = document.getElementById("newchar-err"), btn = document.getElementById("newchar-go");
+    err.textContent = ""; btn.disabled = true; btn.textContent = "Creating…";
+    var files = firstFiles.slice();
+    Studio.createCharacter({ name: form.name.value, handle: form.handle.value, bio: form.bio.value, avatar: avaFile }, user)
+      .then(function (c) {
+        mine.unshift(c.slug); current = c.slug;
+        return (files.length ? Studio.upload(c, files, true) : Promise.resolve()).then(function () { closeCreate(); renderTabs(); load(); });
+      })
+      .catch(function (x) { err.textContent = (x && x.message) || "Something went wrong. Please try again."; })
+      .then(function () { btn.disabled = false; btn.textContent = "Create character"; });
+  };
+
   var drop = document.getElementById("drop");
   document.getElementById("file").onchange = function (e) { handle(e.target.files); e.target.value = ""; };
   ["dragenter", "dragover"].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); }); });

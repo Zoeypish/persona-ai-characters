@@ -29,11 +29,11 @@
 <script src="app.js"></script>
 <script>
   var slug = new URLSearchParams(location.search).get("c");
-  var c = CHARACTERS.filter(function (x) { return x.slug === slug; })[0] || CHARACTERS[0];
-  var pins = [], tab = "pins";
-  document.title = c.name + " · Persona";
-  function fact(k, v) { return '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'; }
+  var c = null, pins = [], tab = "pins";
+  function fact(k, v) { return v ? '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>' : ''; }
   function render() {
+    if (!c) return;
+    document.title = c.name + " · Persona";
     var creatorHtml = c.creatorUsername ? '<a href="creator.html" class="ulink">' + esc(c.creator) + '</a>' : esc(c.creator);
     var body = tab === "pins"
       ? (pins.length ? '<div class="pins" id="pins"></div>' : '<p class="empty-pins">No images yet.</p>')
@@ -56,8 +56,11 @@
     if (tab === "pins" && pins.length) layoutPins(document.getElementById("pins"), pins, { mixed: false });
     document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { tab = b.dataset.tab; render(); }; });
   }
-  render();
-  loadAllLive().then(function (d) { pins = d[c.slug] || []; render(); });
+  Studio.ready.then(function () {
+    c = CHARACTERS.filter(function (x) { return x.slug === slug; })[0] || CHARACTERS[0];
+    render();
+    return loadAllLive();
+  }).then(function (d) { pins = d[c.slug] || []; render(); });
 </script>
 </body>
 </html>
