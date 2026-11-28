@@ -350,18 +350,29 @@
     addDemoPoints: function (n) { writeJSON("persona-points-v1", (readJSON("persona-points-v1") || 0) + n); },
   };
 
-  // ---------- "Shop the look": brand products matched to each image (persona_products.pin_ids) ----------
+  // ---------- "Shop the look": hand-picked plus automatically matched products for each image ----------
+  // Uses persona_shop_the_look (supabase/shop-engine.sql), which also returns US-dollar prices.
+  // Falls back to the older direct table read until that SQL has been run.
   var productCache = {};
   window.Products = {
     forPin: function (id) {
       if (!sb || !id) return Promise.resolve([]);
       if (!productCache[id]) {
-        productCache[id] = sb.from("persona_products")
-          .select("id,store,title,price,sale_price,currency,link,image,on_sale")
-          .contains("pin_ids", [id]).eq("available", true).limit(12)
-          .then(function (r) { return r.error ? [] : r.data || []; }, function () { return []; });
+        var direct = function () {
+          return sb.from("persona_products")
+            .select("id,store,title,price,sale_price,currency,link,image,on_sale")
+            .contains("pin_ids", [id]).eq("available", true).limit(12)
+            .then(function (r) { return r.error ? [] : r.data || []; }, function () { return []; });
+        };
+        productCache[id] = sb.rpc("persona_shop_the_look", { p_pin: id, p_limit: 12 })
+          .then(function (r) { return r.error ? direct() : r.data || []; }, direct);
       }
       return productCache[id];
+    },
+    // Studio: this creator's shop clicks, sales, cash and points per character (empty until shop-engine.sql is run).
+    myEarnings: function () {
+      if (!sb) return Promise.resolve([]);
+      return sb.rpc("persona_my_earnings").then(function (r) { return r.error ? [] : r.data || []; }, function () { return []; });
     },
   };
 })();

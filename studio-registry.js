@@ -98,7 +98,7 @@
   function go(v) {
     S.view = v; tabs();
     var main = v === "images";
-    ["allowance", "drop", "grid"].forEach(function (id) { $(id).hidden = !main; });
+    ["allowance", "origin-box", "rights-box", "drop", "grid"].forEach(function (id) { if ($(id)) $(id).hidden = !main; });
     document.querySelector(".studio-bar").hidden = !main;
     $("sp-panel").hidden = main;
     if (v === "spec") renderSpec();
@@ -310,7 +310,13 @@
       $("sp-cp").onclick = function () { copy($("sp-cp"), out.prompt + (out.negative ? "\n\nNegative: " + out.negative : "")); };
       $("sp-json").onclick = function () { copy($("sp-json"), JSON.stringify(rec, null, 2)); };
       $("sp-share").onclick = function () { copy($("sp-share"), shareLink(Object.assign({}, rec, { character: null, spec_version: null }))); };
-      $("sp-tag").onclick = function () { S.pending = { recipe: shot.recipe, spec_version: l ? l.version : null }; say($("sp-tagmsg"), "Done. The next images you upload to " + c.name + " will remember this shot, so the drift guard can track variety."); };
+      $("sp-tag").onclick = function () {
+        S.pending = { recipe: shot.recipe, spec_version: l ? l.version : null };
+        // Also fill the upload's origin record (provenance) with the tool and prompt.
+        if ($("o-tool")) $("o-tool").value = out.model_name;
+        if ($("o-recipe")) $("o-recipe").value = (out.prompt + "\n\nRecipe: " + JSON.stringify(rec)).slice(0, 4000);
+        say($("sp-tagmsg"), "Done. The next images you upload to " + c.name + " will remember this shot and its origin (tool and prompt).");
+      };
     }
     $("sp-build").onclick = function () { build(pick()); };
     $("sp-surprise").onclick = function () { var ch = Shot.surprise(presets, recent()); var cur = pick(); ch.outfit = cur.outfit; ch.model = cur.model; ch.budget = cur.budget; build(ch); };

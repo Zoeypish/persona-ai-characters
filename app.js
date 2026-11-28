@@ -263,10 +263,15 @@ function renderShop(p) {
     if (!items.length) { el.innerHTML = '<h3>Shop the look</h3>' + lens; return; }
     el.innerHTML = '<h3>Shop the look</h3>' +
       '<div class="shop-grid">' + items.map(function (it) {
-        var price = it.on_sale
-          ? '<b class="sale">' + money(it.sale_price, it.currency) + '</b> <s>' + money(it.price, it.currency) + '</s>'
-          : '<b>' + money(it.price, it.currency) + '</b>';
-        return '<a class="product" href="' + esc(it.link) + '" target="_blank" rel="noopener">' +
+        // Prices are shown in US dollars (converted from the store's currency, updated daily).
+        var full = it.price_usd != null ? it.price_usd : it.price, sale = it.sale_price_usd != null ? it.sale_price_usd : it.sale_price;
+        var cur = it.price_usd != null ? "USD" : it.currency;
+        var price = it.on_sale && sale != null
+          ? '<b class="sale">' + money(sale, cur) + '</b> <s>' + money(full, cur) + '</s>'
+          : '<b>' + money(full, cur) + '</b>';
+        // Every click goes through /api/go, which tracks it and uses the best-paying affiliate link.
+        var href = "/api/go?p=" + encodeURIComponent(it.id) + "&pin=" + encodeURIComponent(p.id) + "&c=" + encodeURIComponent(p.slug);
+        return '<a class="product" href="' + esc(href) + '" target="_blank" rel="noopener sponsored">' +
           '<span class="product-img" title="' + esc(it.title) + '">' + (it.image ? '<img src="' + esc(it.image) + '" alt="" loading="lazy">' : '') + '</span>' +
           '<span class="product-price">' + price + '</span><small>' + esc(it.store) + '</small></a>';
       }).join("") + '</div>' + lens;
