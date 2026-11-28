@@ -1,0 +1,22 @@
+{
+  "id": "nova-reyes",
+  "identity": {
+    "sentence": "Nova Reyes, a woman in her mid 20s with a jet-black blunt bob with short fringe, warm olive skin, dark brown eyes, a small beauty mark under her left eye and a single chrome star ear cuff on her right ear",
+    "age_range": "mid 20s",
+    "face": "Oval face, soft jawline",
+    "eyes": "Dark brown, almond shaped",
+    "skin": "Warm olive, small beauty mark under the left eye",
+    "hair": "Jet-black blunt bob with a short fringe",
+    "body": "Average height, slim build",
+    "signature_detail": "A single chrome star ear cuff on the right ear",
+    "never_change": ["jet-black bob and fringe", "beauty mark under left eye", "chrome star ear cuff", "warm olive skin"]
+  },
+  "style": {
+    "keywords": ["night-time minimal", "oversized", "monochrome", "chrome accents"],
+    "palette": ["black", "charcoal", "cream", "chrome"],
+    "outfit_staples": ["oversized charcoal hoodie", "black wide-leg trousers", "chunky black boots"]
+  },
+  "world": { "home_city": "Toronto", "hobby": "sorting vinyl records" },
+  "references": [],
+  "avoid": ["bright neon colours", "busy daytime crowds"]
+}

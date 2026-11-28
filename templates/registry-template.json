@@ -1,0 +1,28 @@
+{
+  "about": "Persona character registry spec. One per character, saved as numbered versions (v1, v2, ...). Your AI tool reads the latest version before every image so the character stays on-model. Fill in what you can; the identity sentence and two reference images matter most.",
+  "id": "the character's slug, e.g. nova-reyes (set by Persona, never changes)",
+  "identity": {
+    "sentence": "ONE sentence describing the face, hair and signature detail. It is pasted word for word into every prompt.",
+    "age_range": "e.g. mid 20s",
+    "face": "Face shape and features that never change",
+    "eyes": "Eye colour and shape",
+    "skin": "Skin tone, freckles, marks",
+    "hair": "Colour, length and cut",
+    "body": "Height and build, e.g. tall and slim",
+    "signature_detail": "The one thing people recognise instantly",
+    "never_change": ["traits the AI must never change, e.g. hair colour", "beauty mark", "ear cuff"]
+  },
+  "style": {
+    "keywords": ["three to five style words"],
+    "palette": ["main colours"],
+    "outfit_staples": ["pieces the character wears often"]
+  },
+  "world": {
+    "home_city": "Used by the 'Home city landmark' location preset",
+    "hobby": "Used by the 'Doing their hobby' pose preset"
+  },
+  "references": [
+    { "url": "https://... an approved image of the character", "role": "face | full body | profile | style", "image_id": "optional Persona image id" }
+  ],
+  "avoid": ["things this character should never be shown with"]
+}

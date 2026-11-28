@@ -2,24 +2,62 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Persona Creator API",
-    "version": "1.0.0",
-    "description": "Create AI characters on Persona and add their images. Every request acts for the creator who owns the API key, within their Studio upload allowance."
+    "version": "1.1.0",
+    "description": "Create AI characters on Persona and add their images. Every request acts for the creator who owns the API key, within their Studio upload allowance. Also: a versioned character spec (registry) that keeps every image on-model, camera and scene presets, a prompt compiler and model router, a wardrobe from the real product catalog, and a drift guard that catches off-model or repetitive images."
   },
-  "servers": [{ "url": "https://persona-ai-characters.vercel.app" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "https://persona-ai-characters.vercel.app"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/api/v1/me": {
       "get": {
         "operationId": "getMe",
         "summary": "Who am I, my characters and how many uploads I have left",
-        "responses": { "200": { "description": "Creator account", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } } } }
+        "responses": {
+          "200": {
+            "description": "Creator account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/characters": {
       "get": {
         "operationId": "listCharacters",
         "summary": "List my characters",
-        "responses": { "200": { "description": "Characters", "content": { "application/json": { "schema": { "type": "object", "properties": { "characters": { "type": "array", "items": { "$ref": "#/components/schemas/Character" } } } } } } } }
+        "responses": {
+          "200": {
+            "description": "Characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "characters": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Character"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "post": {
         "operationId": "createCharacter",
@@ -27,33 +65,119 @@
         "description": "Creates a character owned by this creator. Optionally sets a profile photo and adds up to 6 images from https URLs. Returns the character's slug, which other actions need.",
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": {
-            "type": "object",
-            "required": ["name"],
-            "properties": {
-              "name": { "type": "string", "maxLength": 60, "description": "Character name" },
-              "handle": { "type": "string", "maxLength": 40, "description": "Optional @handle" },
-              "bio": { "type": "string", "maxLength": 600, "description": "Two or three short sentences about the character" },
-              "avatar_url": { "type": "string", "description": "Optional https URL of a profile photo" },
-              "image_urls": { "type": "array", "maxItems": 6, "items": { "type": "string" }, "description": "Optional https URLs of first images" },
-              "live": { "type": "boolean", "description": "Publish the first images right away. Default false (hidden until the creator switches them on in Studio)." }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 60,
+                    "description": "Character name"
+                  },
+                  "handle": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "description": "Optional @handle"
+                  },
+                  "bio": {
+                    "type": "string",
+                    "maxLength": 600,
+                    "description": "Two or three short sentences about the character"
+                  },
+                  "avatar_url": {
+                    "type": "string",
+                    "description": "Optional https URL of a profile photo"
+                  },
+                  "image_urls": {
+                    "type": "array",
+                    "maxItems": 6,
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Optional https URLs of first images"
+                  },
+                  "live": {
+                    "type": "boolean",
+                    "description": "Publish the first images right away. Default false (hidden until the creator switches them on in Studio)."
+                  }
+                }
+              }
             }
-          } } }
+          }
         },
-        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "type": "object", "properties": {
-          "character": { "$ref": "#/components/schemas/Character" },
-          "profile_url": { "type": "string" },
-          "images": { "type": "array", "items": { "$ref": "#/components/schemas/Image" } },
-          "warnings": { "type": "array", "items": { "type": "string" } }
-        } } } } } }
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "character": {
+                      "$ref": "#/components/schemas/Character"
+                    },
+                    "profile_url": {
+                      "type": "string"
+                    },
+                    "images": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Image"
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/images": {
       "get": {
         "operationId": "listImages",
         "summary": "List a character's uploaded images",
-        "parameters": [{ "name": "character", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Character slug" }],
-        "responses": { "200": { "description": "Images", "content": { "application/json": { "schema": { "type": "object", "properties": { "images": { "type": "array", "items": { "$ref": "#/components/schemas/Image" } } } } } } } }
+        "parameters": [
+          {
+            "name": "character",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Character slug"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Images",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "images": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Image"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       "post": {
         "operationId": "addImage",
@@ -61,30 +185,141 @@
         "description": "Attach the image you generated or the user uploaded (openaiFileIdRefs), or give an https image_url. JPEG, PNG or WebP up to 10 MB. Uses one upload from the creator's allowance unless it is the profile photo.",
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": {
-            "type": "object",
-            "required": ["character"],
-            "properties": {
-              "character": { "type": "string", "description": "Character slug, e.g. nova-reyes" },
-              "openaiFileIdRefs": { "type": "array", "items": { "type": "string" }, "description": "The image file to save (first file is used)" },
-              "image_url": { "type": "string", "description": "https URL of the image, if not attaching a file" },
-              "live": { "type": "boolean", "description": "Publish right away. Default false." },
-              "as_profile_photo": { "type": "boolean", "description": "Use as the character's profile photo instead of a gallery image" }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "character"
+                ],
+                "properties": {
+                  "character": {
+                    "type": "string",
+                    "description": "Character slug, e.g. nova-reyes"
+                  },
+                  "openaiFileIdRefs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The image file to save (first file is used)"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "description": "https URL of the image, if not attaching a file"
+                  },
+                  "live": {
+                    "type": "boolean",
+                    "description": "Publish right away. Default false."
+                  },
+                  "as_profile_photo": {
+                    "type": "boolean",
+                    "description": "Use as the character's profile photo instead of a gallery image"
+                  },
+                  "recipe": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "The recipe object from buildShot (camera, lighting, location, pose, model). Lets the drift guard track variety."
+                  },
+                  "spec_version": {
+                    "type": "integer",
+                    "description": "spec_version from buildShot: which version of the character spec this image was made with"
+                  },
+                  "self_check": {
+                    "type": "object",
+                    "description": "Your honest comparison of this image with the reference sheet, 1 (wrong) to 5 (identical).",
+                    "properties": {
+                      "face": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      "hair": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      "signature": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      },
+                      "face_score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 100,
+                        "description": "Optional overall face-match score"
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
             }
-          } } }
+          }
         },
-        "responses": { "201": { "description": "Saved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Image" } } } } }
+        "responses": {
+          "201": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Image"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/publish": {
       "post": {
         "operationId": "setImageLive",
         "summary": "Show or hide one image on Persona",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": {
-          "type": "object", "required": ["image_id", "live"],
-          "properties": { "image_id": { "type": "string" }, "live": { "type": "boolean" } }
-        } } } },
-        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "string" }, "live": { "type": "boolean" } } } } } } }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image_id",
+                  "live"
+                ],
+                "properties": {
+                  "image_id": {
+                    "type": "string"
+                  },
+                  "live": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "live": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/templates": {
@@ -92,23 +327,456 @@
         "operationId": "getTemplates",
         "summary": "Persona's character template, a filled example, image prompt pack and starter ideas",
         "security": [],
-        "responses": { "200": { "description": "Templates", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } } }
+        "responses": {
+          "200": {
+            "description": "Templates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/registry": {
+      "get": {
+        "operationId": "getCharacterSpec",
+        "summary": "Read a character's spec (identity, locked traits, reference sheet) and its version history",
+        "description": "Call this before making any image of the character. Use identity.sentence word for word and keep identity.never_change unchanged.",
+        "parameters": [
+          {
+            "name": "character",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Character slug"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "A specific version; default latest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spec",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "spec": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "description": "Character spec. See registry_template in getTemplates. Key parts: identity.sentence, identity.never_change, references [{url, role}], style, world, avoid."
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "versions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "version": {
+                            "type": "integer"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "created_at": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveCharacterSpec",
+        "summary": "Save a new version of a character's spec",
+        "description": "Never overwrites: each save becomes the next version (v1, v2, ...). Send the whole spec, with a short note of what changed. Ask the creator before saving.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "character",
+                  "spec"
+                ],
+                "properties": {
+                  "character": {
+                    "type": "string"
+                  },
+                  "spec": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Character spec. See registry_template in getTemplates. Key parts: identity.sentence, identity.never_change, references [{url, role}], style, world, avoid."
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "note": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shots": {
+      "post": {
+        "operationId": "buildShot",
+        "summary": "Build an on-model image prompt for a character, compiled for the best image tool",
+        "description": "Uses the latest spec and the camera/scene presets. Presets you leave out are filled with fresh ones the character hasn't used lately. Returns compiled.prompt (for the chosen or recommended model), router (which model and why, with credits), variety warnings, and recipe/spec_version to send with addImage.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "character"
+                ],
+                "properties": {
+                  "character": {
+                    "type": "string"
+                  },
+                  "camera": {
+                    "type": "string",
+                    "description": "Preset id from getPresets, e.g. cam-35-full"
+                  },
+                  "lighting": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": "string"
+                  },
+                  "pose": {
+                    "type": "string"
+                  },
+                  "outfit": {
+                    "type": "string",
+                    "description": "Free-text outfit"
+                  },
+                  "products": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 8,
+                    "description": "Product ids from searchWardrobe to dress the character in"
+                  },
+                  "model": {
+                    "type": "string",
+                    "enum": [
+                      "gpt-image",
+                      "gemini-image",
+                      "flux",
+                      "midjourney",
+                      "sdxl-lora"
+                    ],
+                    "description": "Image tool to compile for. Use gpt-image when you generate the image yourself in ChatGPT."
+                  },
+                  "budget": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "balanced",
+                      "best"
+                    ]
+                  },
+                  "surprise": {
+                    "type": "boolean",
+                    "description": "Pick a completely fresh set-up"
+                  },
+                  "extra": {
+                    "type": "string",
+                    "description": "Anything else to add to the prompt"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getDriftReport",
+        "summary": "Drift guard: is the character staying on-model, and is the feed getting repetitive?",
+        "parameters": [
+          {
+            "name": "character",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wardrobe": {
+      "get": {
+        "operationId": "searchWardrobe",
+        "summary": "Search real products in Persona's catalog to dress the character in",
+        "security": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "e.g. black leather boots"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "products": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "store": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": [
+                              "number",
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currency": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "link": {
+                            "type": "string"
+                          },
+                          "image": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/presets.json": {
+      "get": {
+        "operationId": "getPresets",
+        "summary": "Camera, lighting, location and pose presets, image models with credits, and variety rules",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Presets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
   "components": {
-    "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
     "schemas": {
-      "Character": { "type": "object", "properties": {
-        "slug": { "type": "string" }, "name": { "type": "string" }, "handle": { "type": "string" }, "bio": { "type": "string" },
-        "avatar_url": { "type": "string" }, "images": { "type": "integer" }, "live_images": { "type": "integer" }, "profile_url": { "type": "string" } } },
-      "Image": { "type": "object", "properties": {
-        "id": { "type": "string" }, "character": { "type": "string" }, "url": { "type": "string" }, "live": { "type": "boolean" },
-        "uploads_left": { "type": "integer" }, "avatar_url": { "type": "string" } } },
-      "Me": { "type": "object", "properties": {
-        "name": { "type": "string" }, "points": { "type": "integer" }, "uploads_used": { "type": "integer" },
-        "uploads_allowed": { "type": "integer" }, "uploads_left": { "type": "integer" },
-        "characters": { "type": "array", "items": { "$ref": "#/components/schemas/Character" } } } }
+      "Character": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "handle": {
+            "type": "string"
+          },
+          "bio": {
+            "type": "string"
+          },
+          "avatar_url": {
+            "type": "string"
+          },
+          "images": {
+            "type": "integer"
+          },
+          "live_images": {
+            "type": "integer"
+          },
+          "profile_url": {
+            "type": "string"
+          }
+        }
+      },
+      "Image": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "character": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "live": {
+            "type": "boolean"
+          },
+          "uploads_left": {
+            "type": "integer"
+          },
+          "avatar_url": {
+            "type": "string"
+          }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "points": {
+            "type": "integer"
+          },
+          "uploads_used": {
+            "type": "integer"
+          },
+          "uploads_allowed": {
+            "type": "integer"
+          },
+          "uploads_left": {
+            "type": "integer"
+          },
+          "characters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Character"
+            }
+          }
+        }
+      }
     }
   }
 }

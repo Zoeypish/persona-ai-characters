@@ -4,6 +4,7 @@
 "use strict";
 const dns = require("dns").promises;
 const net = require("net");
+const Shot = require("../../lib/shot.js");
 
 const BUCKET = "character-images";
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -174,9 +175,94 @@ const Persona = {
       example: require("../../templates/example-nova-reyes.json"),
       image_prompt_pack: require("../../templates/image-prompt-pack.json"),
       starters: require("../../templates/starter-characters.json"),
+      registry_template: require("../../templates/registry-template.json"),
+      registry_example: require("../../templates/example-nova-reyes-spec.json"),
+      presets: require("../../templates/presets.json"),
     };
   },
+
+  // ---------- character registry, shot builder and drift guard (supabase/character-registry.sql) ----------
+  registryGet: (key, slug, version) => rpc("api_registry_get", { p_key: key, p_slug: String(slug || ""), p_version: version ? Number(version) : null }).catch(registryOff),
+  registrySave(key, slug, spec, note) {
+    if (!spec || typeof spec !== "object" || Array.isArray(spec)) throw new ApiError(400, "Send the spec as a JSON object.", "bad_request");
+    return rpc("api_registry_save", { p_key: key, p_slug: String(slug || ""), p_spec: spec, p_note: note || null }).catch(registryOff);
+  },
+  recentImages: (key, slug, limit) => rpc("api_recent_images", { p_key: key, p_slug: String(slug || ""), p_limit: limit || 40 }).catch(registryOff),
+  tagImage: (key, id, recipe, specVersion, check) => rpc("api_tag_image", {
+    p_key: key, p_image_id: String(id || ""), p_recipe: recipe || null, p_spec_version: specVersion ? Number(specVersion) : null, p_ai_check: check || null,
+  }).catch(registryOff),
+  // Drift guard report: variety (repeated set-ups, near-duplicates) and same-face checks.
+  async driftReport(key, slug) {
+    const recent = await Persona.recentImages(key, slug, 40);
+    const presets = require("../../templates/presets.json");
+    return {
+      character: slug,
+      variety: Shot.variety(presets, recent.map((i) => i.recipe)),
+      near_duplicates: Shot.duplicates(recent.filter((i) => i.phash)),
+      same_face: Shot.faceReport(recent),
+      images: recent.length,
+    };
+  },
+  // Wardrobe: real items from the product catalog (persona_products) to dress the character in.
+  async wardrobe(q, ids) {
+    const { url } = config();
+    const sel = "select=id,store,title,price,sale_price,currency,link,image&available=eq.true&limit=12";
+    let filter = "";
+    const clean = (ids || []).map((x) => String(x).replace(/\D/g, "")).filter(Boolean).slice(0, 8);
+    if (clean.length) filter = "&id=in.(" + clean.join(",") + ")";
+    else if (q) {
+      const words = String(q).replace(/[^\p{L}\p{N}\s-]/gu, " ").split(/\s+/).filter((w) => w.length > 1).slice(0, 4);
+      if (!words.length) return [];
+      filter = "&and=" + encodeURIComponent("(" + words.map((w) => "title.ilike.*" + w + "*").join(",") + ")");
+    }
+    else return [];
+    let r;
+    try { r = await fetch(url + "/rest/v1/persona_products?" + sel + filter, { headers: sbHeaders() }); }
+    catch (e) { throw new ApiError(502, "Couldn't reach the product catalog.", "upstream"); }
+    if (!r.ok) throw new ApiError(502, "The product catalog didn't answer (" + r.status + ").", "upstream");
+    return r.json();
+  },
+  // Builds an on-model prompt from the latest spec + presets, and checks it against recent images first.
+  // Extra options: model (compile for that image tool), budget ("low" | "balanced" | "best"), products (catalog ids to wear).
+  async buildShot(key, slug, choice) {
+    choice = choice || {};
+    const presets = require("../../templates/presets.json");
+    const [reg, recent] = await Promise.all([Persona.registryGet(key, slug), Persona.recentImages(key, slug, 40)]);
+    if (!reg.version) throw new ApiError(409, "This character has no spec yet. Save one first (saveCharacterSpec) or in Studio → Character spec.", "no_spec");
+    const recipes = recent.map((i) => i.recipe);
+    const pick = {};
+    for (const g of Shot.GROUPS) {
+      if (choice[g] && !Shot.find(presets, g, choice[g])) throw new ApiError(400, "Unknown " + g + " preset \"" + choice[g] + "\". See /templates/presets.json.", "bad_request");
+      pick[g] = choice[g] || null;
+    }
+    if (choice.surprise || !Shot.GROUPS.some((g) => pick[g])) {
+      const s = Shot.surprise(presets, recipes);
+      for (const g of Shot.GROUPS) if (!pick[g]) pick[g] = s[g];
+    }
+    pick.outfit = choice.outfit; pick.extra = choice.extra;
+    let products = [];
+    if (Array.isArray(choice.products) && choice.products.length) {
+      products = await Persona.wardrobe(null, choice.products);
+      if (products.length) pick.outfit = [pick.outfit].concat(products.map((p) => p.title)).filter(Boolean).join(", ");
+    }
+    const shot = Shot.build(reg.spec, presets, pick, reg.version);
+    shot.spec_version = reg.version;
+    shot.variety = Shot.variety(presets, recipes, pick);
+    shot.router = Shot.route(shot, presets, { budget: choice.budget, has_lora: !!choice.has_lora });
+    const model = choice.model || shot.router.pick.id;
+    shot.compiled = Shot.compile(shot, presets, model, slug);
+    shot.recipe.model = model;
+    if (products.length) shot.wardrobe = products;
+    shot.recipe_json = Shot.toRecipe(slug, reg.version, pick, model, products.map((p) => p.id));
+    shot.next_step = "Generate the image with compiled.prompt (attach compiled.attach reference images if you can), compare it with the references, then call addImage with recipe, spec_version and self_check.";
+    return shot;
+  },
 };
+function registryOff(e) {
+  if (e instanceof ApiError && e.code === "not_enabled")
+    throw new ApiError(503, "The character registry isn't switched on yet. The site owner needs to run supabase/character-registry.sql in Supabase.", "not_enabled");
+  throw e;
+}
 
 // ---------- HTTP helpers ----------
 function origin(req) {
