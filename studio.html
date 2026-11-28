@@ -34,6 +34,7 @@
   <div class="tabs" id="tabs"></div>
   <div class="subtabs" id="subtabs" hidden></div>
   <section class="ct sp" id="sp-panel" hidden></section>
+  <section class="ct sp cb" id="cb-panel" hidden></section>
 
   <form class="newchar" id="newchar" hidden autocomplete="off">
     <h2 id="newchar-title">New character</h2>
@@ -101,8 +102,10 @@
 <script src="search.js"></script>
 <script src="lib/shot.js"></script>
 <script src="studio-registry.js"></script>
+<script src="lib/blocks.js"></script>
+<script src="studio-blocks.js"></script>
 <script>
-  var current = null, user = null, mine = [];
+  var current = null, user = null, mine = [], combining = false;
   function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
 
   var MAIN = ["allowance", "origin-box", "rights-box", "drop", "grid"];
@@ -125,6 +128,7 @@
       "Demo mode: uploads and choices are saved in this browser only. Connect Supabase to save them for everyone.";
     return Studio.myCharacters().then(function (list) {
       mine = list.filter(bySlug);
+      if (StudioBlocks.hasLink()) { current = mine[0] || null; openCombine(); return; }
       if (!mine.length) { renderTabs(); openCreate(true); return; }
       current = mine[0]; renderTabs(); load();
     });
@@ -137,12 +141,14 @@
     var creating = !document.getElementById("newchar").hidden;
     document.getElementById("tabs").innerHTML = mine.map(function (s) {
       var c = bySlug(s);
-      return '<button data-s="' + s + '" class="' + (s === current && !creating ? "on" : "") + '">' + esc(c.name) + '</button>';
-    }).join("") + '<button data-new class="tab-new' + (creating ? " on" : "") + '">+ New character</button>';
+      return '<button data-s="' + s + '" class="' + (s === current && !creating && !combining ? "on" : "") + '">' + esc(c.name) + '</button>';
+    }).join("") + '<button data-new class="tab-new' + (creating ? " on" : "") + '">+ New character</button>' +
+      '<button data-combine class="tab-combine' + (combining ? " on" : "") + '">Combine</button>';
     document.querySelectorAll("#tabs button[data-s]").forEach(function (b) {
-      b.onclick = function () { current = b.dataset.s; closeCreate(); renderTabs(); load(); };
+      b.onclick = function () { current = b.dataset.s; closeCombine(); closeCreate(); renderTabs(); load(); };
     });
-    document.querySelector("#tabs [data-new]").onclick = function () { openCreate(false); };
+    document.querySelector("#tabs [data-new]").onclick = function () { closeCombine(); openCreate(false); };
+    document.querySelector("#tabs [data-combine]").onclick = openCombine;
   }
 
   function renderAllowance(q) {
@@ -207,6 +213,27 @@
       return Studio.upload(bySlug(current), take, false, true, originOf("o-tool", "o-recipe"));
     }).then(load).catch(function (e) { document.getElementById("mode").textContent = "Upload failed: " + e.message; });
   }
+  // ---------- Combine (studio-blocks.js) ----------
+  function openCombine() {
+    if (!form.hidden) closeCreate();
+    combining = true; showMain(false); renderTabs();
+    StudioBlocks.open({ user: user, current: current, chars: mine.map(function (s) { return { slug: s, name: bySlug(s).name }; }) });
+  }
+  function closeCombine() {
+    if (!combining) return;
+    combining = false; StudioBlocks.close();
+  }
+  document.addEventListener("persona:character-created", function (e) {
+    var slug = e.detail.slug;
+    if (mine.indexOf(slug) < 0) mine.unshift(slug);
+    current = slug; renderTabs();
+    StudioBlocks.open({ user: user, current: current, chars: mine.map(function (s) { return { slug: s, name: bySlug(s).name }; }) });
+  });
+
+  document.addEventListener("persona:open-character", function (e) {
+    current = e.detail.slug; closeCombine(); showMain(true); renderTabs(); load();
+  });
+
   // ---------- Create a character ----------
   var form = document.getElementById("newchar"), avaFile = null, firstFiles = [], firstLeft = 0;
   function openCreate(first) {
@@ -229,7 +256,7 @@
     document.getElementById("ava-img").innerHTML = "<span>+ Photo</span>";
     document.getElementById("first-thumbs").innerHTML = "";
     document.getElementById("newchar-err").textContent = "";
-    if (mine.length) showMain(true);
+    if (mine.length && !combining) showMain(true);
   }
   function thumb(f) { return URL.createObjectURL(f); }
   document.getElementById("ava-file").onchange = function (e) {
