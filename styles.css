@@ -339,3 +339,67 @@ button.shop-btn { border: 0; cursor: pointer; }
 .pins.pins-cols { columns: auto; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 16px; align-items: start; }
 @media (max-width: 820px) { .pins.pins-cols { gap: 10px; } }
 [hidden] { display: none !important; }
+
+/* ---------- Image-first redesign ---------- */
+/* Full colour everywhere, no grayscale. */
+.tile img, .tile:hover img { filter: none; }
+.feed { padding: 16px clamp(12px, 2vw, 28px) 64px; }
+.chips { padding: 0 0 16px; }
+
+/* Pins: big, uncropped, no caption below. Name shows on the image. */
+.pins.pins-cols { gap: 20px; }
+.pcol { display: flex; flex-direction: column; gap: 20px; }
+.pcol .pin { margin: 0; }
+.pin-media { border-radius: 20px; }
+.pin-media img { object-fit: cover; }
+.pin-media:hover img.loaded { transform: scale(1.02); }
+.pin-over { background: linear-gradient(rgba(0,0,0,.18), transparent 30%, transparent 62%, rgba(0,0,0,.5)); padding: 14px; }
+.pin-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; }
+.pin-who { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: #fff; font-size: 14px; font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0,0,0,.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-who .mini-ava { box-shadow: 0 0 0 2px #fff; }
+.pin-over .shop-btn { align-self: auto; width: 40px; height: 40px; padding: 0; justify-content: center; flex: none; }
+.pin-over .shop-btn svg { width: 18px; height: 18px; }
+
+/* Closeup: the image gets most of the space. */
+.closeup-card { grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr); width: min(1360px, 100%); }
+.closeup-img { background: #0a0a0a; display: grid; place-items: center; min-height: 100%; }
+.closeup-img img { width: 100%; height: auto; max-height: 92vh; object-fit: contain; }
+.closeup-side { padding: 28px; gap: 18px; }
+.closeup-actions { margin-bottom: 0; }
+.closeup-who { margin-top: 0; padding: 12px 0; }
+.closeup-credit { font-size: 11px; }
+.shop-list { border-bottom: 0; }
+.shop-list h3 { font-size: 24px; }
+.shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.product-img { aspect-ratio: 3 / 4; border-radius: 16px; margin-bottom: 4px; }
+.product { font-size: 14px; }
+
+/* Profile + saved head: just the avatar, name and one button. */
+.phead { padding: clamp(24px, 4vw, 40px) 16px 0; }
+.big-ava { width: 104px; height: 104px; }
+.pactions { margin-top: 16px; }
+.ptabs { margin-top: 20px; margin-bottom: 4px; }
+
+/* Creator page: large character covers. */
+.creator-head { padding: clamp(32px, 5vw, 56px) var(--gutter) clamp(24px, 3vw, 32px); }
+.creator-head p { display: none; }
+.roster { grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 20px; }
+.card .tile { aspect-ratio: 4/5; border-radius: 20px; }
+.card-meta h3 { font-size: 28px; }
+
+footer { padding: 20px var(--gutter); font-size: 11px; }
+
+@media (max-width: 900px) {
+  .closeup { padding: 0; }
+  .closeup-card { grid-template-columns: 1fr; border-radius: 0; min-height: 100vh; }
+  .closeup-img img { max-height: 80vh; }
+  .pins.pins-cols { gap: 12px; } .pcol { gap: 12px; }
+  .pin-over { opacity: 1; background: linear-gradient(transparent 62%, rgba(0,0,0,.45)); }
+  .pin-over .shop-btn { display: inline-flex; width: 36px; height: 36px; }
+}
+@media (max-width: 559px) {
+  .feed { padding-left: 8px; padding-right: 8px; }
+  .pin-media { border-radius: 16px; }
+  .pin-over .save-btn { height: 38px; padding: 0 16px; font-size: 14px; }
+}

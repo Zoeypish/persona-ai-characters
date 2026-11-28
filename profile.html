@@ -17,8 +17,8 @@
 <main id="main"></main>
 
 <footer>
-  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Creator Studio</a></span>
-  <span>Characters and images © their creators, shown with credit for demonstration.</span>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a></span>
+  <span>Images © their creators.</span>
 </footer>
 
 <script src="vendor/supabase-js-2.119.0.js"></script>
@@ -36,7 +36,7 @@
   function render() {
     var creatorHtml = c.creatorUsername ? '<a href="creator.html" class="ulink">' + esc(c.creator) + '</a>' : esc(c.creator);
     var body = tab === "pins"
-      ? (pins.length ? '<div class="pins">' + pins.map(pinHtml).join("") + '</div>' : '<p class="empty-pins">No images live yet. The creator picks what goes live in the Studio.</p>')
+      ? (pins.length ? '<div class="pins" id="pins"></div>' : '<p class="empty-pins">No images yet.</p>')
       : '<div class="about">' +
           '<dl class="facts">' + fact("Handle", esc(c.handle)) + fact("Based in", esc(c.origin)) + fact("Created by", creatorHtml) +
             fact("Since", esc(c.since)) + fact("Audience", esc(c.audience)) + fact("Category", esc(c.category)) + '</dl>' +
@@ -48,14 +48,12 @@
       '<section class="phead">' +
         '<span class="big-ava" data-ava="' + c.slug + '"></span>' +
         '<h1>' + esc(c.name) + '</h1>' +
-        '<p class="phandle">' + esc(c.handle) + '</p>' +
-        '<p class="ptag">' + esc(c.tagline) + '</p>' +
-        '<p class="pby">Created by ' + creatorHtml + ' · ' + esc(c.origin) + '</p>' +
         '<div class="pactions">' + followBtn(c.slug, "lg") + '</div>' +
         '<div class="ptabs"><button data-tab="pins" class="' + (tab === "pins" ? "on" : "") + '">Pins</button><button data-tab="about" class="' + (tab === "about" ? "on" : "") + '">About</button></div>' +
       '</section>' +
       '<section class="feed">' + body + '</section>';
     fillAvatars(document.getElementById("main"));
+    if (tab === "pins" && pins.length) layoutPins(document.getElementById("pins"), pins, { mixed: false });
     document.querySelectorAll("[data-tab]").forEach(function (b) { b.onclick = function () { tab = b.dataset.tab; render(); }; });
   }
   render();
