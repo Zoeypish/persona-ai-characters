@@ -174,3 +174,35 @@ window.imagesFor = function (c) {
     return { id: c.slug + "-" + n, src: window.IMAGE_BASE + c.slug + "-" + n + ".jpg", alt: c.name + ", image " + n, credit: cr[0], creditUrl: cr[1] };
   });
 };
+
+// ---------- Search keywords ----------
+// Style keywords for each character, and for each built-in image: its styles and what is in it
+// (garments, colours). Search ranks: names/usernames first, then styles, then item names, then brands.
+window.SEARCH_TAGS = {
+  characters: {
+    "lil-miquela": ["streetwear", "y2k", "vintage", "preppy", "casual", "colorful", "music", "la"],
+    "imma": ["minimal", "chic", "streetwear", "casual", "art", "tokyo", "pink hair", "bob"],
+    "aitana-lopez": ["sporty", "athleisure", "chic", "minimal", "fitness", "gaming", "pink hair", "barcelona"],
+    "nova-reyes": ["party", "edgy", "evening", "streetwear", "music", "dj", "night"],
+  },
+  pins: {
+    "aitana-lopez-1": { styles: ["sporty", "athleisure", "minimal", "casual"], words: ["white", "tank", "crop top", "top", "activewear", "fitness"] },
+    "aitana-lopez-2": { styles: ["minimal", "edgy", "evening", "chic"], words: ["black", "tank", "top"] },
+    "aitana-lopez-3": { styles: ["cozy", "casual", "minimal"], words: ["grey", "hoodie", "sweater", "knit", "cardigan", "loungewear"] },
+    "aitana-lopez-4": { styles: ["classic", "office", "chic", "minimal"], words: ["blazer", "jacket", "white", "shirt", "grey", "black"] },
+    "aitana-lopez-5": { styles: ["chic", "feminine", "romantic"], words: ["pink", "blazer", "jacket", "necklace", "jewelry"] },
+    "aitana-lopez-6": { styles: ["resort", "beach", "summer", "feminine"], words: ["bikini", "swim", "swimwear", "pink", "palm"] },
+    "imma-1": { styles: ["chic", "minimal", "evening", "party"], words: ["silk", "shirt", "cream", "white", "beige", "night out"] },
+    "imma-2": { styles: ["minimal", "chic", "classic"], words: ["shirt dress", "dress", "green", "olive", "gold", "jewelry", "bracelet", "yellow"] },
+    "imma-3": { styles: ["streetwear", "casual", "denim"], words: ["denim", "jacket", "black", "top", "white", "pants", "cargo", "blue", "ikea"] },
+    "imma-4": { styles: ["edgy", "streetwear", "casual", "denim"], words: ["black", "top", "tee", "jeans", "denim", "jacket", "leather", "gold", "jewelry", "blue"] },
+    "imma-5": { styles: ["evening", "artsy", "party", "minimal"], words: ["black", "dress", "gold", "art"] },
+    "imma-6": { styles: ["casual", "cozy", "streetwear"], words: ["graphic tee", "tee", "t-shirt", "cardigan", "grey", "white", "necklace", "jewelry"] },
+    "lil-miquela-1": { styles: ["casual", "minimal"], words: ["pink", "tee", "t-shirt", "top", "freckles", "buns"] },
+    "lil-miquela-2": { styles: ["streetwear", "sporty", "y2k"], words: ["track jacket", "bomber", "jacket", "blue", "sunglasses"] },
+    "lil-miquela-3": { styles: ["cozy", "streetwear", "casual", "beach"], words: ["red", "hoodie", "sweatshirt", "sweatpants", "sweatsuit"] },
+    "lil-miquela-4": { styles: ["y2k", "vintage", "casual", "denim", "colorful"], words: ["overalls", "denim", "yellow", "top", "sunglasses", "blue"] },
+    "lil-miquela-5": { styles: ["edgy", "streetwear"], words: ["black", "sweater", "knit", "stripes", "white", "leather", "boots", "shoes"] },
+    "lil-miquela-6": { styles: ["preppy", "vintage", "casual", "colorful"], words: ["rugby", "polo", "stripes", "yellow", "white", "pants", "belt"] },
+  },
+};
