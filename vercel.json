@@ -1,6 +1,42 @@
 {
   "cleanUrls": false,
   "headers": [
-    { "source": "/images/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }] }
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "api/cron/[job].js": {
+      "maxDuration": 300
+    },
+    "api/shop.js": {
+      "maxDuration": 10
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/refresh-products",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/match-looks",
+      "schedule": "30 8 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/go",
+      "destination": "/api/shop?action=go"
+    },
+    {
+      "source": "/api/postback",
+      "destination": "/api/shop?action=postback"
+    }
   ]
 }

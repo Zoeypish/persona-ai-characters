@@ -30,6 +30,7 @@
   </div>
 
   <div class="allowance" id="allowance"></div>
+  <section class="earnings" id="earnings" hidden aria-label="Shop earnings"></section>
 
   <div class="tabs" id="tabs"></div>
   <div class="subtabs" id="subtabs" hidden></div>
@@ -129,6 +130,31 @@
       current = mine[0]; renderTabs(); load();
     });
   });
+
+  // Shop earnings: clicks on "Shop the look", sales, cash owed and points, per character.
+  function money$(n) { return "$" + Number(n || 0).toFixed(2); }
+  function renderEarnings() {
+    if (!window.Products || !Products.myEarnings) return;
+    Products.myEarnings().then(function (rows) {
+      var el = document.getElementById("earnings");
+      var t = rows.reduce(function (a, r) {
+        a.c30 += +r.clicks_30d; a.sales += +r.sales; a.owed += +r.cash_owed_usd; a.pending += +r.cash_pending_usd; a.paid += +r.cash_paid_usd; a.pts += +r.points_earned; return a;
+      }, { c30: 0, sales: 0, owed: 0, pending: 0, paid: 0, pts: 0 });
+      el.hidden = false;
+      el.innerHTML = '<h2>Shop earnings</h2>' +
+        '<div class="allowance">' +
+          '<div><dt>Shop clicks (30 days)</dt><dd>' + t.c30 + '</dd></div>' +
+          '<div><dt>Sales</dt><dd>' + t.sales + '</dd></div>' +
+          '<div><dt>You\'re owed</dt><dd>' + money$(t.owed) + '</dd></div>' +
+          '<div><dt>Waiting for approval</dt><dd>' + money$(t.pending) + '</dd></div>' +
+          '<div><dt>Points from sales</dt><dd>' + t.pts + '</dd></div>' +
+        '</div>' +
+        (rows.length > 1 ? '<table class="earn-table"><tr><th>Character</th><th>Clicks (30d)</th><th>Sales</th><th>Owed</th><th>Pending</th></tr>' +
+          rows.map(function (r) { var c = bySlug(r.character_slug); return '<tr><td>' + esc(c ? c.name : (r.character_slug || "Other")) + '</td><td>' + r.clicks_30d + '</td><td>' + r.sales + '</td><td>' + money$(r.cash_owed_usd) + '</td><td>' + money$(r.cash_pending_usd) + '</td></tr>'; }).join("") + '</table>' : '') +
+        '<p class="note">When someone buys through Shop the look on your character\'s images, you get half the commission in cash plus 10 points per $1. Sales show as waiting until the store confirms them (usually 30 to 60 days).</p>';
+    });
+  }
+  Studio.ready.then(function () { if (Studio.mode !== "demo") renderEarnings(); });
 
   document.getElementById("out").onclick = function () { Studio.signOut().then(function () { location.href = "./"; }); };
 

@@ -44,11 +44,25 @@
       return '<a class="chip' + (on.indexOf(s) > -1 ? " on" : "") + '" href="search.html?q=' + encodeURIComponent(s) + '">' + esc(s) + '</a>';
     }).join("");
   }
+  // Prices show in US dollars: converted with the daily rates in Supabase (starting values until those load).
+  var FX = { USD: 1, EUR: 1.16, GBP: 1.33 };
+  try {
+    if (window.Studio && Studio.client) Studio.client.from("persona_fx_rates").select("currency,usd_per_unit").then(function (r) {
+      (r.data || []).forEach(function (x) { FX[x.currency] = +x.usd_per_unit; });
+    });
+  } catch (e) { /* keep starting values */ }
+  function usd(n, c) { var r = FX[c || "USD"]; return n == null || !r ? n : Math.round(n * r * 100) / 100; }
   function price(it) {
-    return it.sp ? '<b class="sale">' + money(it.sp, it.c) + '</b> <s>' + money(it.p, it.c) + '</s>' : '<b>' + money(it.p, it.c) + '</b>';
+    var cur = FX[it.c || "USD"] ? "USD" : it.c;
+    return it.sp ? '<b class="sale">' + money(usd(it.sp, it.c), cur) + '</b> <s>' + money(usd(it.p, it.c), cur) + '</s>' : '<b>' + money(usd(it.p, it.c), cur) + '</b>';
+  }
+  // Clicks go through /api/go, which tracks them and uses the best-paying affiliate link.
+  function shopHref(it) {
+    var i = String(it.id || "").lastIndexOf(":");
+    return i > 0 ? "/api/go?d=" + encodeURIComponent(it.id.slice(0, i)) + "&x=" + encodeURIComponent(it.id.slice(i + 1)) : it.l;
   }
   function productCard(it) {
-    return '<a class="product s-product" href="' + esc(it.l) + '" target="_blank" rel="noopener" title="' + esc(it.t) + '">' +
+    return '<a class="product s-product" href="' + esc(shopHref(it)) + '" target="_blank" rel="noopener sponsored" title="' + esc(it.t) + '">' +
       '<span class="product-img">' + (it.m ? '<img src="' + esc(it.m) + '" alt="' + esc(it.t) + '" loading="lazy" onerror="this.remove()">' : '') + '</span>' +
       '<span class="product-price">' + price(it) + '</span><small>' + esc(it.b) + '</small></a>';
   }
