@@ -17,15 +17,13 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
 (function header() {
   var el = document.getElementById("nav");
   if (!el) return;
-  var opts = CHARACTERS.map(function (c) { return '<option value="' + esc(c.name) + '">'; }).join("");
   el.className = "nav";
   el.innerHTML =
     '<a class="wordmark" href="./" aria-label="Persona home">' + MARK + '<span>Persona</span></a>' +
     '<div class="nav-right">' +
       '<form class="search" role="search" id="search-form">' +
         '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
-        '<input id="search" type="search" placeholder="Search characters, looks, creators" list="search-list" autocomplete="off" aria-label="Search characters">' +
-        '<datalist id="search-list">' + opts + '</datalist>' +
+        '<input id="search" type="search" placeholder="Search names, styles, brands" autocomplete="off" aria-label="Search">' +
       '</form>' +
       '<a class="nav-saved" href="saved.html" aria-label="Saved">' + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span>Saved</span></a>' +
       '<a class="nav-signin" id="nav-me" href="login.html">Sign in</a>' +
@@ -39,16 +37,7 @@ var MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx=
     me.className = "avatar"; me.href = "studio.html"; me.title = name; me.setAttribute("aria-label", "Your studio (" + name + ")");
     me.innerHTML = u.avatar ? '<img src="' + esc(u.avatar) + '" alt="" referrerpolicy="no-referrer">' : esc(initials || "?");
   }).catch(function () {});
-  document.getElementById("search-form").onsubmit = function (e) {
-    e.preventDefault();
-    var q = document.getElementById("search").value.trim().toLowerCase();
-    if (!q) return;
-    var hit = CHARACTERS.filter(function (c) {
-      return (c.name + " " + c.handle + " " + c.category + " " + c.origin + " " + c.creator).toLowerCase().indexOf(q) > -1;
-    })[0];
-    if (hit) location.href = "profile.html?c=" + hit.slug;
-    else document.getElementById("search").value = "", document.getElementById("search").placeholder = "No match for “" + q + "”";
-  };
+  // Typing in the search box and its suggestions are handled in search.js.
 })();
 
 // ---------- Save, follow, shop ----------
@@ -239,7 +228,8 @@ function loadAllLive() {
 
 // ---------- Masonry with big images ----------
 // Few, wide columns so every image is large. On the homepage no two pins from the same character
-// touch (side by side or stacked). Pass {mixed:false} on single-character pages to skip that rule.
+// touch (side by side or stacked). Pass {mixed:false} on single-character pages to skip that rule,
+// and {ordered:true} to keep pins as close as possible to the order given (the personal homepage feed).
 function colCount(w) { return w < 560 ? 1 : w < 900 ? 2 : Math.min(4, Math.max(2, Math.floor((w + 20) / (320 + 20)))); }
 function layoutPins(el, pins, opts) {
   opts = opts || {};
@@ -292,8 +282,11 @@ function drawPins(el, pins, opts) {
     }
     return { col: col, clashes: total };
   }
-  var res = attempt(false);
-  for (var t = 0; mixed && t < 1500 && res.clashes > 0; t++) { var r2 = attempt(true); if (r2.clashes < res.clashes) res = r2; }
+  var res = opts.ordered ? orderedLayout(pins, cols, ratio, meta, pad) : null;
+  if (!res) {
+    res = attempt(false);
+    for (var t = 0; mixed && t < 1500 && res.clashes > 0; t++) { var r2 = attempt(true); if (r2.clashes < res.clashes) res = r2; }
+  }
   el._cols = cols;
   el.classList.add("pins-cols");
   el.style.setProperty("--cols", cols);
@@ -301,4 +294,54 @@ function drawPins(el, pins, opts) {
     return '<div class="pcol">' + x.items.map(function (it, i) { return pinHtml(it.p, i); }).join("") + '</div>';
   }).join("");
   fillAvatars(el);
+  if (window.Feed) Feed.watch(el);
+}
+
+// Ordered feed layout. Pins fill the shortest column one at a time, in feed order. When the next pin would
+// sit beside or under a pin of the same character, the next one in line that fits goes there instead, and
+// if a dead end is reached it steps back and tries again. So the feed order is kept as far as the
+// "never adjacent" rule allows. Returns null if no clean layout is found quickly (the caller then uses the
+// classic layout).
+function orderedLayout(pins, cols, ratio, meta, pad) {
+  var col = [], left = pins.slice(), budget = 20000;
+  for (var k = 0; k < cols; k++) col.push({ h: 0, items: [] });
+  function touches(slug, c, top, bot) {
+    var me = col[c].items[col[c].items.length - 1];
+    if (me && me.slug === slug) return 2;
+    var near = 0;
+    for (var j = c - 1; j <= c + 1; j += 2) {
+      if (j < 0 || j >= cols) continue;
+      for (var i = 0; i < col[j].items.length; i++) {
+        var it = col[j].items[i]; if (it.slug !== slug) continue;
+        if (it.top < bot && it.bot > top) return 2;                       // side by side
+        if (it.top < bot + pad && it.bot + pad > top) near = 1;            // corner to corner: allowed, avoided if cheap
+      }
+    }
+    return near;
+  }
+  function place() {
+    if (!left.length) return true;
+    if (--budget < 0) return false;
+    var c = 0; col.forEach(function (x, j) { if (x.h < col[c].h - 0.001) c = j; });
+    var top = col[c].h, tries = [];
+    left.forEach(function (p, i) {
+      var bot = top + ratio(p) + meta, t = touches(p.slug, c, top, bot);
+      if (t < 2) tries.push({ i: i, p: p, bot: bot, cost: i + t * 0.5 });
+    });
+    tries.sort(function (a, b) { return a.cost - b.cost; });
+    var seenSlug = {};
+    for (var n = 0; n < tries.length; n++) {
+      var tr = tries[n];
+      if (seenSlug[tr.p.slug + "|" + tr.bot.toFixed(3)]) continue;     // same character and shape: same outcome
+      seenSlug[tr.p.slug + "|" + tr.bot.toFixed(3)] = 1;
+      left.splice(tr.i, 1);
+      col[c].items.push({ slug: tr.p.slug, p: tr.p, top: top, bot: tr.bot }); col[c].h = tr.bot;
+      if (place()) return true;
+      col[c].items.pop(); col[c].h = top;
+      left.splice(tr.i, 0, tr.p);
+      if (budget < 0) return false;
+    }
+    return false;
+  }
+  return place() ? { col: col, clashes: 0 } : null;
 }

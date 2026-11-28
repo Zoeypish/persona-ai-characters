@@ -30,6 +30,8 @@
 <script src="data.js"></script>
 <script src="store.js"></script>
 <script src="app.js"></script>
+<script src="feed.js"></script>
+<script src="search.js"></script>
 <script>
   var DATA = {}, filter = new URLSearchParams(location.search).get("c") || "all";
   function chips() {
@@ -42,13 +44,18 @@
   }
   function render() {
     var pins = [], f = Social.following();
-    var slugs = filter === "all" ? CHARACTERS.map(function (c) { return c.slug; }) : filter === "following" ? f : [filter];
-    slugs.forEach(function (s) { pins = pins.concat(DATA[s] || []); });
+    if (filter === "all") {
+      // Personal mix: 50% characters you follow, 35% similar styles, 15% random; fresh pins first.
+      pins = Feed.build(DATA, f, Social.saved());
+    } else {
+      var slugs = filter === "following" ? f : [filter];
+      slugs.forEach(function (s) { pins = pins.concat(DATA[s] || []); });
+    }
     var el = document.getElementById("pins");
     if (!pins.length) {
       el.innerHTML = '<p class="empty-pins">' + (filter === "following" ? 'Follow a character to see their pins here.' : 'Nothing live yet.') + '</p>';
       el.classList.remove("pins-cols");
-    } else layoutPins(el, pins);
+    } else layoutPins(el, pins, { ordered: filter === "all" });
     fillAvatars(el); chips();
   }
   document.getElementById("chips").onclick = function (e) {
