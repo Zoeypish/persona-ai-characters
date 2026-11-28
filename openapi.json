@@ -1,0 +1,114 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Persona Creator API",
+    "version": "1.0.0",
+    "description": "Create AI characters on Persona and add their images. Every request acts for the creator who owns the API key, within their Studio upload allowance."
+  },
+  "servers": [{ "url": "https://persona-ai-characters.vercel.app" }],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "Who am I, my characters and how many uploads I have left",
+        "responses": { "200": { "description": "Creator account", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Me" } } } } }
+      }
+    },
+    "/api/v1/characters": {
+      "get": {
+        "operationId": "listCharacters",
+        "summary": "List my characters",
+        "responses": { "200": { "description": "Characters", "content": { "application/json": { "schema": { "type": "object", "properties": { "characters": { "type": "array", "items": { "$ref": "#/components/schemas/Character" } } } } } } } }
+      },
+      "post": {
+        "operationId": "createCharacter",
+        "summary": "Create a new character on Persona",
+        "description": "Creates a character owned by this creator. Optionally sets a profile photo and adds up to 6 images from https URLs. Returns the character's slug, which other actions need.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "maxLength": 60, "description": "Character name" },
+              "handle": { "type": "string", "maxLength": 40, "description": "Optional @handle" },
+              "bio": { "type": "string", "maxLength": 600, "description": "Two or three short sentences about the character" },
+              "avatar_url": { "type": "string", "description": "Optional https URL of a profile photo" },
+              "image_urls": { "type": "array", "maxItems": 6, "items": { "type": "string" }, "description": "Optional https URLs of first images" },
+              "live": { "type": "boolean", "description": "Publish the first images right away. Default false (hidden until the creator switches them on in Studio)." }
+            }
+          } } }
+        },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "type": "object", "properties": {
+          "character": { "$ref": "#/components/schemas/Character" },
+          "profile_url": { "type": "string" },
+          "images": { "type": "array", "items": { "$ref": "#/components/schemas/Image" } },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        } } } } } }
+      }
+    },
+    "/api/v1/images": {
+      "get": {
+        "operationId": "listImages",
+        "summary": "List a character's uploaded images",
+        "parameters": [{ "name": "character", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Character slug" }],
+        "responses": { "200": { "description": "Images", "content": { "application/json": { "schema": { "type": "object", "properties": { "images": { "type": "array", "items": { "$ref": "#/components/schemas/Image" } } } } } } } }
+      },
+      "post": {
+        "operationId": "addImage",
+        "summary": "Add an image to one of my characters",
+        "description": "Attach the image you generated or the user uploaded (openaiFileIdRefs), or give an https image_url. JPEG, PNG or WebP up to 10 MB. Uses one upload from the creator's allowance unless it is the profile photo.",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["character"],
+            "properties": {
+              "character": { "type": "string", "description": "Character slug, e.g. nova-reyes" },
+              "openaiFileIdRefs": { "type": "array", "items": { "type": "string" }, "description": "The image file to save (first file is used)" },
+              "image_url": { "type": "string", "description": "https URL of the image, if not attaching a file" },
+              "live": { "type": "boolean", "description": "Publish right away. Default false." },
+              "as_profile_photo": { "type": "boolean", "description": "Use as the character's profile photo instead of a gallery image" }
+            }
+          } } }
+        },
+        "responses": { "201": { "description": "Saved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Image" } } } } }
+      }
+    },
+    "/api/v1/publish": {
+      "post": {
+        "operationId": "setImageLive",
+        "summary": "Show or hide one image on Persona",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": {
+          "type": "object", "required": ["image_id", "live"],
+          "properties": { "image_id": { "type": "string" }, "live": { "type": "boolean" } }
+        } } } },
+        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "string" }, "live": { "type": "boolean" } } } } } } }
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "operationId": "getTemplates",
+        "summary": "Persona's character template, a filled example, image prompt pack and starter ideas",
+        "security": [],
+        "responses": { "200": { "description": "Templates", "content": { "application/json": { "schema": { "type": "object", "additionalProperties": true } } } } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } },
+    "schemas": {
+      "Character": { "type": "object", "properties": {
+        "slug": { "type": "string" }, "name": { "type": "string" }, "handle": { "type": "string" }, "bio": { "type": "string" },
+        "avatar_url": { "type": "string" }, "images": { "type": "integer" }, "live_images": { "type": "integer" }, "profile_url": { "type": "string" } } },
+      "Image": { "type": "object", "properties": {
+        "id": { "type": "string" }, "character": { "type": "string" }, "url": { "type": "string" }, "live": { "type": "boolean" },
+        "uploads_left": { "type": "integer" }, "avatar_url": { "type": "string" } } },
+      "Me": { "type": "object", "properties": {
+        "name": { "type": "string" }, "points": { "type": "integer" }, "uploads_used": { "type": "integer" },
+        "uploads_allowed": { "type": "integer" }, "uploads_left": { "type": "integer" },
+        "characters": { "type": "array", "items": { "$ref": "#/components/schemas/Character" } } } }
+    }
+  }
+}

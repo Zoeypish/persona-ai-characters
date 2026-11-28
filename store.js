@@ -124,6 +124,7 @@
 
   window.Studio = {
     mode: mode,
+    client: sb, // Supabase client (null in demo mode); used by the Connect AI page
     // Every page waits for this before reading CHARACTERS, so creator-made characters are included.
     ready: loadCharacters(),
     slugify: slugify,

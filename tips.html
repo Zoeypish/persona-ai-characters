@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tips for creators — Persona</title>
+<meta name="description" content="Templates, prompts and example images for building AI characters on Persona.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="creator-tools.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="ct">
+  <div class="eyebrow">For creators</div>
+  <h1>Tips &amp; templates</h1>
+  <p class="ct-lead">Everything we know about making a character people want to follow. Download the templates, give them to your AI tool, and use the example images as a guide.</p>
+  <div class="ct-actions" id="cta">
+    <a class="btn" href="connect.html">Connect your ChatGPT</a>
+    <a class="btn ghost" href="#templates">Get the templates</a>
+  </div>
+
+  <section class="ct-sec">
+    <h2>Five rules</h2>
+    <ul class="ct-rules">
+      <li><i>1</i><b>One identity sentence</b><span>Describe the face, hair and one signature detail in a single sentence, and paste it into every image prompt, word for word.</span></li>
+      <li><i>2</i><b>Show the whole outfit</b><span>Full-body images let Shop the look match every piece. Aim for four out of six.</span></li>
+      <li><i>3</i><b>Portrait, never square</b><span>2:3 or 4:5, at least 1200 px tall. Big, sharp images fill the homepage beautifully.</span></li>
+      <li><i>4</i><b>A world, not a face</b><span>A home city, a hobby, a way of talking. Followers come back for the story.</span></li>
+      <li><i>5</i><b>No text, no real people</b><span>No captions or logos on the image, and never another person's face or name.</span></li>
+    </ul>
+  </section>
+
+  <section class="ct-sec">
+    <h2>Example images</h2>
+    <p class="sub">What works on Persona, from characters already on the site.</p>
+    <div class="ct-examples">
+      <figure><div class="ph"><img src="images/imma-2.jpg" alt="Imma in an olive utility dress against a yellow wall" loading="lazy"></div>
+        <figcaption><b>Outfit hero</b><span>Full look, plain bold background. Every piece is easy to shop.</span><small>Imma · © Aww Inc.</small></figcaption></figure>
+      <figure><div class="ph"><img src="images/lil-miquela-4.jpg" alt="Lil Miquela in overalls among red flowers" loading="lazy"></div>
+        <figcaption><b>Signature detail</b><span>Space buns, fringe and tinted glasses. You know who it is from across the room.</span><small>Lil Miquela · © Brud</small></figcaption></figure>
+      <figure><div class="ph"><img src="images/imma-3.jpg" alt="Imma sitting on cardboard boxes with a small dog" loading="lazy"></div>
+        <figcaption><b>Tell a story</b><span>Props and a moment make the image feel real, and the outfit is still fully visible.</span><small>Imma · © Aww Inc.</small></figcaption></figure>
+      <figure><div class="ph"><img src="images/lil-miquela-3.jpg" alt="Lil Miquela on a beach reading a magazine" loading="lazy"></div>
+        <figcaption><b>Lifestyle scene</b><span>Golden light and a real place. Feels like a day in the character's life.</span><small>Lil Miquela · © Brud</small></figcaption></figure>
+      <figure><div class="ph"><img src="images/aitana-lopez-4.jpg" alt="Aitana López in a blazer and white shirt" loading="lazy"></div>
+        <figcaption><b>Portrait</b><span>Teaches followers the face. Mix one or two in with the outfit shots.</span><small>Aitana López · © The Clueless</small></figcaption></figure>
+      <figure><div class="ph"><img src="images/imma-5.jpg" alt="Imma holding a glowing glass sphere in the dark" loading="lazy"></div>
+        <figcaption><b>Mood shot</b><span>Use sparingly. Beautiful, but there is nothing to shop.</span><small>Imma · © Aww Inc.</small></figcaption></figure>
+    </div>
+  </section>
+
+  <section class="ct-sec">
+    <h2>Same face, every time</h2>
+    <p class="sub">Aitana's pink hair, brows and face shape never change, even when the outfit and setting do. That is what the identity sentence gives you.</p>
+    <div class="ct-strip">
+      <div class="ph"><img src="images/aitana-lopez-1.jpg" alt="Aitana López in a white tank top" loading="lazy"></div>
+      <div class="ph"><img src="images/aitana-lopez-5.jpg" alt="Aitana López in a pink jacket" loading="lazy"></div>
+      <div class="ph"><img src="images/aitana-lopez-6.jpg" alt="Aitana López outdoors by palm leaves" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="ct-sec" id="templates">
+    <h2>Templates</h2>
+    <p class="sub">JSON files your AI tool understands. Download one, or copy it and paste it into ChatGPT, Claude or any other assistant with your idea.</p>
+    <div class="ct-files" id="files"></div>
+    <pre id="preview" hidden></pre>
+  </section>
+</main>
+
+<footer>
+  <span>© Persona 2026 · <a href="tips.html">Tips</a> · <a href="studio.html">Studio</a></span>
+  <span>Example images © their creators, shown with credit.</span>
+</footer>
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+  var FILES = [
+    { f: "character-template.json", t: "Character template", d: "The blank form. Every field your character needs, with hints." },
+    { f: "example-nova-reyes.json", t: "Filled example: Nova Reyes", d: "A finished character, including three ready-to-use image prompts." },
+    { f: "image-prompt-pack.json", t: "Image prompt pack", d: "Six shot types that look great on Persona, plus settings for popular image tools." },
+    { f: "starter-characters.json", t: "Starter ideas", d: "Five character directions to start from when you have a blank page." },
+  ];
+  var pre = document.getElementById("preview"), open = "";
+  document.getElementById("files").innerHTML = FILES.map(function (x) {
+    return '<div class="ct-file"><h3>' + x.t + '</h3><p>' + x.d + '</p><div class="row">' +
+      '<a href="templates/' + x.f + '" download>Download</a><button class="linkbtn" data-copy="' + x.f + '">Copy</button>' +
+      '<button class="linkbtn" data-view="' + x.f + '">Preview</button></div></div>';
+  }).join("");
+  function get(f) { return fetch("templates/" + f).then(function (r) { return r.text(); }); }
+  document.getElementById("files").onclick = function (e) {
+    var c = e.target.closest("[data-copy]"), v = e.target.closest("[data-view]");
+    if (c) get(c.dataset.copy).then(function (t) { return navigator.clipboard.writeText(t); })
+      .then(function () { c.textContent = "Copied"; setTimeout(function () { c.textContent = "Copy"; }, 1500); }, function () {});
+    if (v) {
+      if (open === v.dataset.view) { pre.hidden = true; open = ""; return; }
+      open = v.dataset.view; get(open).then(function (t) { pre.textContent = t; pre.hidden = false; pre.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
+    }
+  };
+</script>
+</body>
+</html>
