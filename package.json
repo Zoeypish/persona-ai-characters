@@ -3,7 +3,7 @@
   "private": true,
   "description": "Persona: AI characters platform (static site + Vercel functions + Supabase)",
   "engines": { "node": ">=20" },
-  "scripts": { "test": "node tests/shop-engine.test.js && node tests/library.test.js" },
+  "scripts": { "test": "node tests/shop-engine.test.js && node tests/library.test.js && node tests/generate.test.js" },
   "dependencies": {
     "@anthropic-ai/sdk": "1.8.0",
     "sharp": "0.35.5"

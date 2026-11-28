@@ -195,6 +195,7 @@
 
     // rights: the creator ticked "I own or have the rights to these images, and no real person is shown without consent".
     // origin: {tool, recipe} — which AI tool made the images, and the prompt or recipe (optional). Shown on each image.
+    // Resolves with the new image ids.
     upload: function (c, files, live, rights, origin) {
       origin = origin || {};
       var tool = String(origin.tool || "").trim().slice(0, 80), recipe = String(origin.recipe || "").trim().slice(0, 4000);
@@ -213,6 +214,7 @@
               .then(function (r2) {
                 if (r2.error && /rights_confirmed/i.test(r2.error.message)) throw new Error("The safety update isn't switched on yet. Run supabase/accounts-and-safety.sql in Supabase first.");
                 if (r2.error) throw r2.error;
+                return id;
               });
           });
         }));
@@ -220,7 +222,7 @@
       if (live) { var lm = readJSON(LIVE_KEY) || {}; list.forEach(function (f, i) { lm["up-" + now + "-" + i] = true; }); writeJSON(LIVE_KEY, lm); }
       return tx("readwrite", function (st) {
         list.forEach(function (f, i) { st.put({ id: "up-" + now + "-" + i, slug: c.slug, name: f.name, blob: f, created: now + i, rights: true, rightsAt: now, origin: { tool: tool, recipe: recipe } }); });
-      });
+      }).then(function () { return list.map(function (f, i) { return "up-" + now + "-" + i; }); });
     },
 
     remove: function (c, im) {

@@ -102,6 +102,7 @@
 <script src="app.js"></script>
 <script src="search.js"></script>
 <script src="lib/shot.js"></script>
+<script src="studio-generate.js"></script>
 <script src="studio-registry.js"></script>
 <script src="lib/blocks.js"></script>
 <script src="studio-blocks.js"></script>
@@ -256,6 +257,7 @@
     StudioBlocks.open({ user: user, current: current, chars: mine.map(function (s) { return { slug: s, name: bySlug(s).name }; }) });
   });
 
+  document.addEventListener("persona:reload", function () { load(); }); // e.g. after saving generated images
   document.addEventListener("persona:open-character", function (e) {
     current = e.detail.slug; closeCombine(); showMain(true); renderTabs(); load();
   });
