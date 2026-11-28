@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generate with AI — Persona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="creator-tools.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="ct" id="page" hidden>
+  <a class="back" href="studio.html">← Studio</a>
+  <div class="eyebrow">Creator Studio</div>
+  <h1>Generate with AI</h1>
+  <p class="ct-lead">Use your own OpenAI or Claude account to design a character from one line, make its images, and publish it to Persona without leaving the Studio.</p>
+
+  <section class="ct-sec">
+    <h2>1. Your AI key</h2>
+    <p class="sub">Your key goes straight from this browser to OpenAI or Anthropic. Persona never receives or stores it. Usage is billed to your own AI account (a character and three images usually cost well under $1).</p>
+    <div class="ct-card">
+      <div class="ct-grid2">
+        <label class="ct-field"><span>Writes the character</span>
+          <select id="provider"><option value="openai">OpenAI (ChatGPT)</option><option value="anthropic">Anthropic (Claude)</option></select></label>
+        <label class="ct-field"><span id="key-label">OpenAI API key</span>
+          <input type="password" id="key" placeholder="sk-…" autocomplete="off" spellcheck="false"></label>
+      </div>
+      <label class="ct-field" id="img-key-row" hidden><span>OpenAI key for images (optional)</span>
+        <input type="password" id="imgkey" placeholder="sk-… (Claude writes, OpenAI draws)" autocomplete="off" spellcheck="false"></label>
+      <label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)"><input type="checkbox" id="remember"> Remember on this device</label>
+      <details style="margin-top:12px;font-size:13px;color:var(--muted)"><summary style="cursor:pointer">Where do I get a key? · Models</summary>
+        <p style="margin-top:8px">OpenAI: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="text-decoration:underline">platform.openai.com/api-keys</a>. Claude: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="text-decoration:underline">console.anthropic.com</a>. A ChatGPT or Claude subscription is separate from API credit.</p>
+        <div class="ct-grid2" style="margin-top:10px">
+          <label class="ct-field"><span>Text model</span><input type="text" id="model"></label>
+          <label class="ct-field"><span>Image model</span><input type="text" id="imodel" value="gpt-image-1"></label>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="ct-sec">
+    <h2>2. Your idea</h2>
+    <p class="sub">One line is enough. Or start from an idea below.</p>
+    <div class="chips" id="starters" style="margin-bottom:12px;justify-content:flex-start;padding:0"></div>
+    <textarea id="idea" rows="3" maxlength="600" placeholder="e.g. A night-shift DJ from Toronto who dresses in oversized black with one chrome detail"></textarea>
+    <div class="ct-actions" style="margin-top:14px"><button class="btn" id="write">Design my character</button></div>
+    <p class="ct-msg" id="msg1" role="status"></p>
+  </section>
+
+  <section class="ct-sec" id="s3" hidden>
+    <h2>3. Review</h2>
+    <p class="sub">Change anything you like. The identity sentence goes into every image prompt so the face stays the same.</p>
+    <div class="ct-card">
+      <div class="ct-grid2">
+        <label class="ct-field"><span>Name</span><input type="text" id="f-name" maxlength="60"></label>
+        <label class="ct-field"><span>Handle</span><input type="text" id="f-handle" maxlength="40"></label>
+      </div>
+      <label class="ct-field"><span>Bio</span><textarea id="f-bio" maxlength="600" rows="3"></textarea></label>
+      <label class="ct-field"><span>Identity sentence</span><textarea id="f-id" rows="2"></textarea></label>
+      <div id="prompts"></div>
+      <details style="font-size:13px;color:var(--muted)"><summary style="cursor:pointer">Full character sheet (JSON)</summary><pre id="sheet" style="margin-top:8px"></pre>
+        <button class="linkbtn" id="dl">Download JSON</button></details>
+    </div>
+    <div class="ct-actions"><button class="btn" id="draw">Make the images</button><span class="muted" style="align-self:center;font-size:13px">Or skip and add your own photos below.</span></div>
+    <p class="ct-msg" id="msg2" role="status"></p>
+    <div class="ct-gen-imgs" id="imgs"></div>
+    <label class="drop" style="margin-top:16px"><input type="file" id="own" accept="image/*" multiple hidden><strong>Add your own images</strong><span>From Midjourney, ChatGPT or anywhere else.</span></label>
+  </section>
+
+  <section class="ct-sec" id="s4" hidden>
+    <h2>4. Publish</h2>
+    <p class="sub" id="quota"></p>
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px;margin-bottom:16px"><input type="checkbox" id="golive" checked> Put the chosen images live on the homepage right away</label>
+    <button class="btn" id="publish">Create character on Persona</button>
+    <p class="ct-msg" id="msg3" role="status"></p>
+  </section>
+</main>
+
+<footer>
+  <span>© Persona 2026 · <a href="tips.html">Tips</a> · <a href="studio.html">Studio</a></span>
+  <span>Your AI key never leaves your browser except to go to your AI provider.</span>
+</footer>
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var user = null, sheet = null, imgs = [], TEMPLATE = null, PACK = null; // imgs: {file, url, pick, avatar, label}
+  var DEFAULTS = { openai: "gpt-5-mini", anthropic: "claude-sonnet-5-5" };
+  var STORE_KEY = "persona-ai-keys-v1";
+  function say(id, t, bad) { $(id).textContent = t || ""; $(id).className = "ct-msg" + (bad ? " err" : ""); }
+
+  // ---------- keys: this tab only, unless "remember" ----------
+  function loadKeys() {
+    var s = null;
+    try { s = JSON.parse(sessionStorage.getItem(STORE_KEY) || localStorage.getItem(STORE_KEY) || "null"); } catch (e) {}
+    if (!s) return;
+    $("provider").value = s.provider || "openai"; $("key").value = s.key || ""; $("imgkey").value = s.imgkey || "";
+    $("remember").checked = !!localStorage.getItem(STORE_KEY);
+  }
+  function saveKeys() {
+    var v = JSON.stringify({ provider: $("provider").value, key: $("key").value.trim(), imgkey: $("imgkey").value.trim() });
+    try {
+      sessionStorage.setItem(STORE_KEY, v);
+      if ($("remember").checked) localStorage.setItem(STORE_KEY, v); else localStorage.removeItem(STORE_KEY);
+    } catch (e) {}
+  }
+  function syncProvider() {
+    var p = $("provider").value;
+    $("key-label").textContent = p === "openai" ? "OpenAI API key" : "Anthropic API key";
+    $("key").placeholder = p === "openai" ? "sk-…" : "sk-ant-…";
+    $("img-key-row").hidden = p === "openai";
+    if (!$("model").value || $("model").value === DEFAULTS.openai || $("model").value === DEFAULTS.anthropic) $("model").value = DEFAULTS[p];
+  }
+  ["provider", "key", "imgkey", "remember"].forEach(function (id) { $(id).addEventListener("change", function () { if (id === "provider") syncProvider(); saveKeys(); }); });
+
+  // ---------- AI calls (browser → provider directly) ----------
+  function apiError(r, j) {
+    var m = (j && j.error && (j.error.message || j.error.type)) || ("HTTP " + r.status);
+    if (r.status === 401) m = "Your AI key was rejected. Check it and try again.";
+    if (r.status === 429) m = "Your AI account is out of credit or busy: " + m;
+    throw new Error(m);
+  }
+  function askJSON(system, prompt) {
+    var p = $("provider").value, key = $("key").value.trim(), model = $("model").value.trim() || DEFAULTS[p];
+    if (!key) return Promise.reject(new Error("Paste your AI key in step 1 first."));
+    var req = p === "openai"
+      ? fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+          body: JSON.stringify({ model: model, response_format: { type: "json_object" }, messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) })
+      : fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+          body: JSON.stringify({ model: model, max_tokens: 2500, system: system, messages: [{ role: "user", content: prompt }] }) });
+    return req.then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { if (!r.ok) apiError(r, j); return j; }); })
+      .then(function (j) {
+        var text = p === "openai" ? j.choices[0].message.content : j.content.filter(function (c) { return c.type === "text"; }).map(function (c) { return c.text; }).join("");
+        var m = text.match(/\{[\s\S]*\}/); if (!m) throw new Error("The AI didn't return a character. Try again.");
+        return JSON.parse(m[0]);
+      });
+  }
+  function imageKey() { return $("provider").value === "openai" ? $("key").value.trim() : $("imgkey").value.trim(); }
+  function drawOne(prompt) {
+    return fetch("https://api.openai.com/v1/images/generations", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + imageKey() },
+      body: JSON.stringify({ model: $("imodel").value.trim() || "gpt-image-1", prompt: prompt, size: "1024x1536", n: 1 }) })
+      .then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { if (!r.ok) apiError(r, j); return j; }); })
+      .then(function (j) {
+        var d = j.data && j.data[0]; if (!d) throw new Error("No image came back.");
+        if (d.b64_json) return fetch("data:image/png;base64," + d.b64_json).then(function (r) { return r.blob(); });
+        return fetch(d.url).then(function (r) { return r.blob(); });
+      }).then(toJpeg);
+  }
+  function toJpeg(blob) {
+    return new Promise(function (res) {
+      var img = new Image(), u = URL.createObjectURL(blob);
+      img.onload = function () {
+        var k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), cv = document.createElement("canvas");
+        cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(u);
+        cv.toBlob(function (b) { res(new File([b || blob], "ai-" + Date.now() + ".jpg", { type: "image/jpeg" })); }, "image/jpeg", 0.9);
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); res(new File([blob], "ai-" + Date.now() + ".png", { type: blob.type || "image/png" })); };
+      img.src = u;
+    });
+  }
+
+  // ---------- step 2: design ----------
+  $("write").onclick = function () {
+    var idea = $("idea").value.trim(); if (!idea) { say("msg1", "Write your idea in one line first.", true); return; }
+    saveKeys(); var b = this; b.disabled = true; b.textContent = "Designing…"; say("msg1", "Your AI is writing the character. This takes 10 to 40 seconds.");
+    var system = "You design original AI characters for Persona, a Pinterest-style site where people follow characters and shop their outfits. " +
+      "Reply with ONLY a JSON object that follows this template exactly (same keys), with every field filled in: " + JSON.stringify(TEMPLATE) +
+      " Also add the key \"identity_sentence\": one sentence describing face, hair and the signature detail, which must appear word for word inside every image prompt. " +
+      "Give exactly 3 image_prompts, using these shot types: " + JSON.stringify(PACK.shots.slice(0, 4).map(function (s) { return s.name + ": " + s.prompt; })) +
+      ". Portrait orientation, full outfit visible in at least two, no text or logos, never a real person. bio under 500 characters. handle starts with @.";
+    askJSON(system, "Character idea: " + idea).then(function (j) {
+      sheet = j; delete sheet.$schema_note; fillSheet(); $("s3").hidden = false; $("s4").hidden = false; refreshQuota(); say("msg1", "");
+      $("s3").scrollIntoView({ behavior: "smooth" });
+    }).catch(function (e) { say("msg1", e.message, true); }).then(function () { b.disabled = false; b.textContent = "Design my character"; });
+  };
+  function fillSheet() {
+    $("f-name").value = sheet.name || ""; $("f-handle").value = sheet.handle || ""; $("f-bio").value = sheet.bio || ""; $("f-id").value = sheet.identity_sentence || "";
+    $("prompts").innerHTML = (sheet.image_prompts || []).slice(0, 4).map(function (p, i) {
+      return '<label class="ct-field"><span>Image prompt ' + (i + 1) + '</span><textarea data-p="' + i + '" rows="3">' + esc(p) + '</textarea></label>';
+    }).join("");
+    $("sheet").textContent = JSON.stringify(sheet, null, 2);
+  }
+  function readSheet() {
+    sheet.name = $("f-name").value.trim(); sheet.handle = $("f-handle").value.trim(); sheet.bio = $("f-bio").value.trim(); sheet.identity_sentence = $("f-id").value.trim();
+    sheet.image_prompts = Array.prototype.map.call(document.querySelectorAll("[data-p]"), function (t) { return t.value.trim(); }).filter(Boolean);
+    $("sheet").textContent = JSON.stringify(sheet, null, 2);
+  }
+  $("s3").addEventListener("input", function (e) { if (e.target.matches("input,textarea")) readSheet(); });
+  $("dl").onclick = function () {
+    readSheet(); var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(sheet, null, 2)], { type: "application/json" }));
+    a.download = (Studio.slugify(sheet.name) || "character") + ".json"; a.click();
+  };
+
+  // ---------- step 3: images ----------
+  function renderImgs() {
+    $("imgs").innerHTML = imgs.map(function (im, i) {
+      if (!im.url) return '<label><div class="wait">' + esc(im.label) + '</div></label>';
+      return '<label class="' + (im.pick ? "on" : "") + '"><input type="checkbox" data-pick="' + i + '"' + (im.pick ? " checked" : "") + '><img src="' + im.url + '" alt="">' +
+        '<button type="button" class="tag" data-ava="x' + i + '" style="border:0;cursor:pointer">' + (im.avatar ? "Profile photo ✓" : "Use as profile") + '</button></label>';
+    }).join("");
+    refreshQuota();
+  }
+  $("imgs").onclick = function (e) {
+    var a = e.target.closest("[data-ava]"); if (a) { e.preventDefault(); var n = +a.dataset.ava.slice(1); imgs.forEach(function (im, i) { im.avatar = i === n ? !im.avatar : false; }); renderImgs(); return; }
+  };
+  $("imgs").onchange = function (e) { var c = e.target.closest("[data-pick]"); if (c) { imgs[+c.dataset.pick].pick = c.checked; renderImgs(); } };
+  function addFile(f, label) { imgs.push({ file: f, url: URL.createObjectURL(f), pick: true, avatar: !imgs.some(function (x) { return x.avatar; }), label: label }); }
+  $("own").onchange = function (e) { Array.prototype.forEach.call(e.target.files, function (f) { if (/^image\//.test(f.type)) addFile(f, "yours"); }); e.target.value = ""; renderImgs(); };
+  $("draw").onclick = function () {
+    readSheet();
+    if (!imageKey()) { say("msg2", $("provider").value === "openai" ? "Paste your OpenAI key in step 1." : "Images need an OpenAI key: add one in step 1, or add your own images below.", true); return; }
+    var prompts = sheet.image_prompts.slice(0, 4).map(function (p) { return sheet.identity_sentence && p.indexOf(sheet.identity_sentence) < 0 ? p + ". The character: " + sheet.identity_sentence : p; });
+    if (!prompts.length) { say("msg2", "Add at least one image prompt.", true); return; }
+    var b = this; b.disabled = true; say("msg2", "Drawing " + prompts.length + " images. Each takes about 30 to 60 seconds.");
+    var slots = prompts.map(function (p, i) { var s = { label: "Drawing image " + (i + 1) + "…" }; imgs.push(s); return s; });
+    renderImgs();
+    var errors = [];
+    Promise.all(prompts.map(function (p, i) {
+      return drawOne(p).then(function (f) {
+        var s = slots[i]; s.file = f; s.url = URL.createObjectURL(f); s.pick = true; s.avatar = !imgs.some(function (x) { return x.avatar; }); renderImgs();
+      }, function (e) { errors.push(e.message); imgs.splice(imgs.indexOf(slots[i]), 1); renderImgs(); });
+    })).then(function () {
+      b.disabled = false; b.textContent = "Make more images";
+      say("msg2", errors.length ? errors[0] : "Tick the images you want to keep and choose a profile photo.", !!errors.length);
+    });
+  };
+
+  // ---------- step 4: publish with the normal Studio rules ----------
+  var left = 0;
+  function refreshQuota() {
+    return Studio.quota().then(function (q) {
+      left = q.left;
+      var gallery = imgs.filter(function (im) { return im.url && im.pick && !im.avatar; }).length;
+      $("quota").textContent = "You have " + q.left + " upload" + (q.left === 1 ? "" : "s") + " left. " +
+        (gallery ? gallery + " image" + (gallery === 1 ? "" : "s") + " chosen" + (gallery > q.left ? ": only the first " + q.left + " will be added." : ".") : "No gallery images chosen yet.") +
+        " The profile photo doesn't count.";
+    });
+  }
+  $("publish").onclick = function () {
+    readSheet(); if (!sheet.name) { say("msg3", "Give your character a name.", true); return; }
+    var b = this; b.disabled = true; b.textContent = "Publishing…"; say("msg3", "");
+    var ava = imgs.filter(function (im) { return im.url && im.avatar; })[0];
+    var gallery = imgs.filter(function (im) { return im.url && im.pick && !im.avatar; }).map(function (im) { return im.file; });
+    var bio = sheet.bio;
+    Studio.createCharacter({ name: sheet.name, handle: sheet.handle, bio: bio, avatar: ava && ava.file }, user).then(function (c) {
+      var take = gallery.slice(0, left);
+      return (take.length ? Studio.upload(c, take, $("golive").checked) : Promise.resolve()).then(function () { return c; });
+    }).then(function (c) {
+      say("msg3", "Done! " + c.name + " is on Persona.");
+      $("msg3").innerHTML += ' <a href="profile.html?c=' + encodeURIComponent(c.slug) + '" style="text-decoration:underline;color:var(--ink)">See the profile</a> · <a href="studio.html" style="text-decoration:underline;color:var(--ink)">Open Studio</a>';
+      b.textContent = "Published";
+    }).catch(function (e) { say("msg3", e.message || "Something went wrong.", true); b.disabled = false; b.textContent = "Create character on Persona"; });
+  };
+
+  // ---------- start ----------
+  Promise.all([Studio.session(), Studio.ready,
+    fetch("templates/character-template.json").then(function (r) { return r.json(); }),
+    fetch("templates/image-prompt-pack.json").then(function (r) { return r.json(); }),
+    fetch("templates/starter-characters.json").then(function (r) { return r.json(); })]).then(function (r) {
+    if (!r[0]) { location.href = "login.html"; return; }
+    user = r[0]; TEMPLATE = r[2]; PACK = r[3];
+    $("page").hidden = false; loadKeys(); syncProvider();
+    $("starters").innerHTML = r[4].starters.map(function (s) { return '<button class="chip" data-idea="' + esc(s.idea) + '">' + esc(s.title) + '</button>'; }).join("");
+    $("starters").onclick = function (e) { var c = e.target.closest("[data-idea]"); if (c) $("idea").value = c.dataset.idea; };
+  });
+})();
+</script>
+</body>
+</html>

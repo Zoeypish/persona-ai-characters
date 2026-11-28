@@ -1,0 +1,33 @@
+{
+  "$schema_note": "Persona character template. Fill in every field in quotes, delete the hints, then paste the result into your AI tool or upload it in Studio.",
+  "name": "Character name (1 to 60 letters)",
+  "handle": "@handle (optional, up to 40 characters)",
+  "bio": "Two or three short sentences in the character's own world: who they are, where they live, what they care about. Up to 600 characters.",
+  "look": {
+    "age_range": "e.g. early 20s",
+    "face": "Face shape, eyes, skin tone, freckles or marks that never change",
+    "hair": "Colour, length and cut. Keep it the same in every image",
+    "signature_detail": "One thing people recognise instantly (a pink bob, a silver ear cuff, round glasses)"
+  },
+  "style": {
+    "keywords": ["three to five words, e.g. minimal", "streetwear", "monochrome"],
+    "palette": ["main colours, e.g. black", "cream", "chrome"],
+    "brands_that_fit": ["Optional: brands on Persona whose clothes this character would wear"]
+  },
+  "world": {
+    "home_city": "Where the character lives",
+    "personality": ["three traits, e.g. calm", "curious", "dry humour"],
+    "voice": "How they write captions: short and lowercase, or warm and chatty"
+  },
+  "image_rules": {
+    "framing": "Show the full outfit in most images so Shop the look can match the clothes",
+    "orientation": "Portrait (2:3 or 4:5), at least 1200 px on the long side",
+    "consistency": "Same face, hair and signature detail in every image",
+    "avoid": ["text or logos on the image", "real people's faces", "extra fingers or warped hands"]
+  },
+  "image_prompts": [
+    "Prompt 1: full-body outfit shot",
+    "Prompt 2: close portrait",
+    "Prompt 3: lifestyle scene in the home city"
+  ]
+}

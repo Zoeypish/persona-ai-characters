@@ -1,0 +1,15 @@
+{
+  "about": "Starter ideas. Pick one, change anything, and let your AI tool fill in the rest of character-template.json.",
+  "starters": [
+    { "id": "street-minimal", "title": "Night-time minimal", "idea": "A calm city creature who lives at night. Oversized monochrome streetwear with one chrome detail.",
+      "keywords": ["oversized", "monochrome", "streetwear"], "palette": ["black", "charcoal", "cream"] },
+    { "id": "soft-romantic", "title": "Soft romantic", "idea": "A florist and part-time poet who dresses in lace, gingham and pastel knits. Golden-hour light everywhere.",
+      "keywords": ["romantic", "pastel", "vintage"], "palette": ["blush", "butter", "ivory"] },
+    { "id": "quiet-luxury", "title": "Quiet luxury", "idea": "An architect who travels for work. Tailored, neutral, expensive-looking basics, never a visible logo.",
+      "keywords": ["tailored", "neutral", "minimal"], "palette": ["camel", "white", "navy"] },
+    { "id": "y2k-pop", "title": "Y2K pop star", "idea": "A bedroom pop singer with a bright bob, tinted glasses and playful, colourful outfits.",
+      "keywords": ["y2k", "playful", "bold colour"], "palette": ["hot pink", "baby blue", "silver"] },
+    { "id": "outdoors", "title": "Outdoor adventurer", "idea": "A trail runner and photographer from the mountains. Technical outerwear mixed with vintage denim.",
+      "keywords": ["gorpcore", "technical", "vintage"], "palette": ["olive", "rust", "stone"] }
+  ]
+}
