@@ -6,6 +6,17 @@ A minimal, high-end home for AI characters and the humans who create them.
 - **Creator Studio** (`studio.html`, sign in at `login.html`): Google sign-in, upload images, switch each image live or hidden. Creators start with 5 uploads and unlock 1 more for every 10 points.
 - Plain HTML/CSS/JS, no build step. Content lives in `data.js`.
 
+## Search
+The search box (header) and `search.html?q=` search characters, images and brand products together.
+Every item has keywords, and results are ranked in this order:
+1. **Names**: character name, @handle, creator name/username.
+2. **Styles**: streetwear, minimal, boho, y2k... (the item's own styles beat styles it gets from its brand or character).
+3. **Item**: what it is and its colour (product title, "dress", "black", "denim", incl. French names like "robe").
+4. **Brand**.
+
+Keywords live in `data.js` (`SEARCH_TAGS`, for characters and the built-in images) and `search-index.json` (products).
+After refreshing the product list, rebuild the index: `python3 scripts/build-search-index.py path/to/persona_products.csv`.
+
 ## Run locally
 Serve the folder with any static server, for example `python3 -m http.server`, and open http://localhost:8000.
 Without Supabase it runs in **demo mode**: uploads and choices are saved in your browser only.
