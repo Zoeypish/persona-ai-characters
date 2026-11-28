@@ -1,0 +1,341 @@
+{
+  "about": "Persona camera and scene presets. Pick one from each group to build a shot. Each preset adds a short phrase to the image prompt. The character's identity sentence always comes first, so the face stays the same while the shot changes.",
+  "version": 1,
+  "groups": [
+    {
+      "key": "camera",
+      "name": "Camera",
+      "hint": "Lens, distance and angle"
+    },
+    {
+      "key": "lighting",
+      "name": "Lighting",
+      "hint": "Time of day and light quality"
+    },
+    {
+      "key": "location",
+      "name": "Location",
+      "hint": "Where the character is"
+    },
+    {
+      "key": "pose",
+      "name": "Pose",
+      "hint": "What the character is doing"
+    }
+  ],
+  "camera": [
+    {
+      "id": "cam-35-full",
+      "name": "35mm full body",
+      "shop": true,
+      "prompt": "full-body shot on a 35mm lens at eye level, head to shoes in frame"
+    },
+    {
+      "id": "cam-50-three-quarter",
+      "name": "50mm three-quarter",
+      "shop": true,
+      "prompt": "three-quarter length shot on a 50mm lens, from mid-thigh up, eye level"
+    },
+    {
+      "id": "cam-85-portrait",
+      "name": "85mm portrait",
+      "shop": false,
+      "prompt": "head-and-shoulders portrait on an 85mm lens, shallow depth of field, eyes in sharp focus"
+    },
+    {
+      "id": "cam-24-wide",
+      "name": "24mm wide scene",
+      "shop": true,
+      "prompt": "wide 24mm shot, the character full length and small in a large scene, environment visible"
+    },
+    {
+      "id": "cam-low-hero",
+      "name": "Low angle hero",
+      "shop": true,
+      "prompt": "low-angle full-body shot looking slightly up, 35mm lens, strong confident framing"
+    },
+    {
+      "id": "cam-high-flatlay",
+      "name": "Overhead",
+      "shop": true,
+      "prompt": "shot from directly above, full body visible, graphic composition"
+    },
+    {
+      "id": "cam-across-street",
+      "name": "Across the street",
+      "shop": true,
+      "prompt": "candid telephoto shot from across the street, 135mm lens, full outfit visible, passers-by soft in the foreground"
+    },
+    {
+      "id": "cam-mirror",
+      "name": "Mirror selfie",
+      "shop": true,
+      "prompt": "mirror selfie, phone held at chest height, full length reflection, slight wide-angle phone look"
+    },
+    {
+      "id": "cam-detail",
+      "name": "Detail close-up",
+      "shop": true,
+      "prompt": "macro close-up of one accessory or shoe, the outfit soft behind it, 100mm lens"
+    },
+    {
+      "id": "cam-film-snapshot",
+      "name": "Film snapshot",
+      "shop": true,
+      "prompt": "point-and-shoot film snapshot with direct flash, 28mm, slightly off-centre, full outfit visible"
+    }
+  ],
+  "lighting": [
+    {
+      "id": "light-golden",
+      "name": "Golden hour",
+      "prompt": "warm golden-hour sunlight from the side, long soft shadows"
+    },
+    {
+      "id": "light-overcast",
+      "name": "Soft overcast",
+      "prompt": "soft even overcast daylight, true-to-life colours"
+    },
+    {
+      "id": "light-window",
+      "name": "Window light",
+      "prompt": "soft natural window light from one side, gentle falloff"
+    },
+    {
+      "id": "light-studio",
+      "name": "Clean studio",
+      "prompt": "clean studio lighting, large softbox, seamless backdrop"
+    },
+    {
+      "id": "light-flash-night",
+      "name": "Night flash",
+      "prompt": "night-time on-camera flash, dark background, crisp highlights"
+    },
+    {
+      "id": "light-neon",
+      "name": "Neon night",
+      "prompt": "city neon light, coloured reflections, cinematic night mood"
+    },
+    {
+      "id": "light-blue-hour",
+      "name": "Blue hour",
+      "prompt": "cool blue-hour dusk light with warm practical lights in the background"
+    },
+    {
+      "id": "light-hard-noon",
+      "name": "Hard noon sun",
+      "prompt": "bright midday sun, hard graphic shadows, high contrast"
+    }
+  ],
+  "location": [
+    {
+      "id": "loc-city-street",
+      "name": "City street",
+      "prompt": "on a busy city sidewalk with shopfronts"
+    },
+    {
+      "id": "loc-cafe",
+      "name": "Café",
+      "prompt": "at a small corner café table by the window"
+    },
+    {
+      "id": "loc-apartment",
+      "name": "Apartment",
+      "prompt": "in a minimal, lived-in apartment with plants and books"
+    },
+    {
+      "id": "loc-studio-wall",
+      "name": "Coloured wall",
+      "prompt": "against a single bold painted wall"
+    },
+    {
+      "id": "loc-beach",
+      "name": "Beach",
+      "prompt": "on a quiet beach with soft sand and sea in the background"
+    },
+    {
+      "id": "loc-park",
+      "name": "Park",
+      "prompt": "in a leafy city park on a path"
+    },
+    {
+      "id": "loc-rooftop",
+      "name": "Rooftop",
+      "prompt": "on a rooftop with the city skyline behind"
+    },
+    {
+      "id": "loc-subway",
+      "name": "Subway",
+      "prompt": "on a subway platform, train lights blurred"
+    },
+    {
+      "id": "loc-market",
+      "name": "Market",
+      "prompt": "walking through an outdoor flower or food market"
+    },
+    {
+      "id": "loc-gallery",
+      "name": "Gallery",
+      "prompt": "in a white-walled art gallery with large artworks"
+    },
+    {
+      "id": "loc-home-city",
+      "name": "Home city landmark",
+      "prompt": "at a recognisable spot in {home_city}"
+    }
+  ],
+  "pose": [
+    {
+      "id": "pose-walk",
+      "name": "Walking",
+      "prompt": "walking toward the camera mid-stride, natural movement"
+    },
+    {
+      "id": "pose-stand",
+      "name": "Standing relaxed",
+      "prompt": "standing relaxed, weight on one leg, hands in pockets"
+    },
+    {
+      "id": "pose-sit",
+      "name": "Sitting",
+      "prompt": "sitting casually, legs crossed, outfit still fully visible"
+    },
+    {
+      "id": "pose-lean",
+      "name": "Leaning",
+      "prompt": "leaning against a wall, looking off to the side"
+    },
+    {
+      "id": "pose-look-back",
+      "name": "Looking back",
+      "prompt": "looking back over the shoulder toward the camera"
+    },
+    {
+      "id": "pose-laugh",
+      "name": "Candid laugh",
+      "prompt": "caught mid-laugh, candid, not posed"
+    },
+    {
+      "id": "pose-hobby",
+      "name": "Doing their hobby",
+      "prompt": "absorbed in {hobby}, not looking at the camera"
+    },
+    {
+      "id": "pose-adjust",
+      "name": "Adjusting outfit",
+      "prompt": "adjusting a jacket collar or sleeve, hands near the clothes"
+    }
+  ],
+  "always": {
+    "add": [
+      "photorealistic",
+      "natural skin texture",
+      "portrait orientation 2:3",
+      "no text, no watermark, no logos"
+    ],
+    "avoid": [
+      "text",
+      "watermark",
+      "logo",
+      "collage",
+      "extra fingers",
+      "warped hands",
+      "a real person's face or name",
+      "changing the face, hair colour or signature detail"
+    ]
+  },
+  "settings": {
+    "openai_gpt_image": {
+      "size": "1024x1536",
+      "quality": "high"
+    },
+    "midjourney": "--ar 2:3 --style raw, add --cref with your main reference image and --cw 100",
+    "other_tools": "Portrait 2:3 or 4:5, at least 1200 px on the long side. Always attach the reference images if the tool allows it."
+  },
+  "variety_rules": {
+    "about": "The drift guard warns when the same set-up repeats, because repeating one recipe is what makes a feed look samey (model collapse).",
+    "recent_window": 12,
+    "max_same_camera": 4,
+    "max_same_location": 3,
+    "max_same_recipe": 1,
+    "min_shop_ready_share": 0.6
+  },
+  "models": [
+    {
+      "id": "gpt-image",
+      "name": "ChatGPT images (GPT Image)",
+      "credits": 3,
+      "refs": true,
+      "negative": false,
+      "good_for": [
+        "long detailed prompts",
+        "clean images with no stray text",
+        "editing with reference photos"
+      ],
+      "params": {
+        "size": "1024x1536",
+        "quality": "high"
+      }
+    },
+    {
+      "id": "gemini-image",
+      "name": "Gemini image (Nano Banana)",
+      "credits": 2,
+      "refs": true,
+      "negative": false,
+      "good_for": [
+        "keeping the same face from reference photos",
+        "quick edits of an existing image"
+      ],
+      "params": {
+        "aspect_ratio": "2:3"
+      }
+    },
+    {
+      "id": "flux",
+      "name": "Flux (Kontext / Pro)",
+      "credits": 1,
+      "refs": true,
+      "negative": false,
+      "good_for": [
+        "photorealism",
+        "low cost per image",
+        "fast drafts"
+      ],
+      "params": {
+        "aspect_ratio": "2:3"
+      }
+    },
+    {
+      "id": "midjourney",
+      "name": "Midjourney",
+      "credits": 2,
+      "refs": true,
+      "negative": true,
+      "good_for": [
+        "fashion and editorial looks",
+        "mood and lighting"
+      ],
+      "params": {
+        "ar": "2:3",
+        "style": "raw"
+      }
+    },
+    {
+      "id": "sdxl-lora",
+      "name": "Stable Diffusion + your LoRA",
+      "credits": 1,
+      "refs": false,
+      "negative": true,
+      "good_for": [
+        "cheapest at volume once a LoRA of the character is trained"
+      ],
+      "params": {
+        "width": 832,
+        "height": 1216,
+        "steps": 30
+      }
+    }
+  ],
+  "models_note": "Credits are Persona's rough relative cost per image (1 = cheapest), not exact prices. Real prices change; check each tool."
+}
