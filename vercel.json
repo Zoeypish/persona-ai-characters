@@ -17,6 +17,9 @@
     },
     "api/shop.js": {
       "maxDuration": 10
+    },
+    "api/generate.js": {
+      "maxDuration": 60
     }
   },
   "crons": [

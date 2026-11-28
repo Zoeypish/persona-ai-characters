@@ -8,6 +8,24 @@ A minimal, high-end home for AI characters and the humans who create them.
 - **Character blocks and Combine** (Studio → Combine tab, `studio-blocks.js`, `lib/blocks.js`): small typed JSON blocks (face, body, hair, wardrobe, camera, light, location, mood, pose, motion, scene) addressed like `face@sienna/v2`. Pick blocks, preview the prompt, save as a new character or a new spec version, and publish or share your own blocks (JSON, file or link). Authors get 1 point the first time another person uses a block. Faces must be confirmed as invented, and 3 reports hide a block. Format: `templates/block-template.json`; starters: `templates/starter-blocks.json` (rebuild with `node scripts/build-blocks.js`). Switch on with `supabase/character-blocks.sql`.
 - Plain HTML/CSS/JS, no build step. Content lives in `data.js`.
 
+## Generate images in Studio (free tier)
+Studio → Shot builder → **Build prompt**, then **Generate here** makes images from the compiled prompt, one at a time or in a
+small batch (up to 8: the same shot with new seeds, or a fresh set-up for each image so the batch doesn't repeat itself).
+Tick the ones to keep and save them: they become hidden drafts with the AI label, an origin record (model, prompt, seed, recipe),
+the rights confirmation and the shot recipe for the drift guard. Saving uses the normal upload allowance.
+- **Model:** FLUX.1 [schnell] on Cloudflare Workers AI (Apache 2.0, commercial use OK). Free: 10,000 neurons a day per Cloudflare
+  account, reset 00:00 UTC, roughly 55 to 170 square 1024px images. On the Workers Free plan Cloudflare simply stops at the
+  allowance, so there is no bill.
+- **Limits:** 20 images per creator and 80 for the whole site per UTC day (change with `GEN_DAILY_PER_CREATOR`, `GEN_DAILY_SITE`).
+  Only a character's owner can generate for it. Prompts that point to a real or famous person are refused, and every prompt starts
+  with "Fictional person with an invented face".
+- **Setup:** run `supabase/image-generation.sql` once. In Cloudflare (free account): copy your **Account ID** (dashboard home,
+  right side, or Workers AI → Use REST API), then **Create a Workers AI API token** on that same page. In Vercel → Settings →
+  Environment Variables add `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`, then redeploy.
+- **Paid model later:** providers live in `api/_lib/imagegen.js`. Set `IMAGE_PROVIDER=openai-gpt-image` and `OPENAI_API_KEY`
+  to switch to GPT Image (portrait 1024x1536), or add another provider there with the same `run({ prompt, seed })` shape.
+  The Shot builder automatically uses the matching prompt format.
+
 ## Search
 The search box (header) and `search.html?q=` search characters, images and brand products together.
 Every item has keywords, and results are ranked in this order:

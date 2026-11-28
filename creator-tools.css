@@ -220,3 +220,20 @@
 @media (max-width: 520px) { .cb-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); } .cb-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cb-picker { padding: 12px; } }
 .cb-collage.small { grid-template-columns: repeat(3, 1fr); }
 .cb-collage.small figure:first-child { grid-column: auto; }
+
+/* Shot builder → Generate here (studio-generate.js) */
+.gen { border-top: 1px solid var(--line); margin-top: 22px; padding-top: 4px; }
+.gen h3 { margin: 16px 0 6px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+.gen .gen-ok { margin: 12px 0; }
+.gen-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.gen-row .ct-field { min-width: 150px; margin: 0; }
+.gen-row .btn { margin-bottom: 2px; }
+.gen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+.gen-item { margin: 0; border: 2px solid transparent; }
+.gen-item.on { border-color: var(--ink); }
+.gen-item img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: var(--tile); }
+.gen-item figcaption { display: grid; gap: 2px; padding: 6px; font-size: 12px; }
+.gen-item input { width: auto; }
+.gen-item label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.gen-save { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.gen-save small { flex-basis: 100%; }

@@ -293,7 +293,7 @@
       var model = ch.model || router.pick.id, out = Shot.compile(shot, presets, model, c.slug);
       var rec = Shot.toRecipe(c.slug, l && l.version, ch, model, S.wear.map(function (w) { return String(w.id); }));
       shot.recipe.model = model; if (rec.products) shot.recipe.products = rec.products;
-      S.last = shot;
+      S.last = shot; S.built = Object.assign({}, ch);
       var refs = (spec().references || []);
       var params = Object.keys(out.params || {}).map(function (k) { return k + ": " + out.params[k]; }).join(" · ");
       $("sp-out").innerHTML = '<div class="sp-res"><div class="sp-res-top"><span class="ct-pill">' + esc(recipeLabel(shot.recipe)) + '</span>' + (l ? '<span class="ct-pill">Spec v' + l.version + '</span>' : "") + '</div>' +
@@ -306,7 +306,7 @@
         (refs.length ? '<h3>Attach your reference sheet</h3><div class="sp-refs small">' + refs.map(function (r) { return thumb(refSrc(r), r.role); }).join("") + '</div>' : '<p class="muted small">Tip: add a reference sheet to the spec and attach it to your image tool. It is the strongest way to keep the same face.</p>') +
         '<div class="sp-btns"><button class="btn" type="button" id="sp-cp">Copy prompt</button><button class="btn ghost" type="button" id="sp-tag">Tag my next upload</button>' +
         '<button class="btn ghost" type="button" id="sp-json">Copy recipe</button><button class="btn ghost" type="button" id="sp-share">Copy share link</button></div>' +
-        '<p class="ct-msg" id="sp-tagmsg"></p></div>';
+        '<p class="ct-msg" id="sp-tagmsg"></p></div><div id="sp-gen"></div>';
       $("sp-cp").onclick = function () { copy($("sp-cp"), out.prompt + (out.negative ? "\n\nNegative: " + out.negative : "")); };
       $("sp-json").onclick = function () { copy($("sp-json"), JSON.stringify(rec, null, 2)); };
       $("sp-share").onclick = function () { copy($("sp-share"), shareLink(Object.assign({}, rec, { character: null, spec_version: null }))); };
@@ -317,6 +317,30 @@
         if ($("o-recipe")) $("o-recipe").value = (out.prompt + "\n\nRecipe: " + JSON.stringify(rec)).slice(0, 4000);
         say($("sp-tagmsg"), "Done. The next images you upload to " + c.name + " will remember this shot and its origin (tool and prompt).");
       };
+      if (window.StudioGen) StudioGen.mount($("sp-gen"), {
+        c: c,
+        // n prompts for the active image model. "seeds": this shot n times (the server picks a new seed each time).
+        // "fresh": this shot, then new set-ups the character hasn't used lately, so a batch doesn't look the same.
+        shots: function (n, mode, family) {
+          var noRefs = function (sh) { return Object.assign({}, sh, { references: [] }); }; // the free model can't take reference images
+          var one = function (sh, choice) {
+            var rec = Object.assign({}, sh.recipe, { model: family });
+            return { prompt: Shot.compile(noRefs(sh), presets, family, c.slug).prompt, recipe: rec, label: recipeLabel(rec), choice: choice };
+          };
+          var jobs = [one(shot, ch)], seen = [shot.recipe].concat(recent());
+          for (var i = 1; i < n; i++) {
+            if (mode !== "fresh") { jobs.push(jobs[0]); continue; }
+            var fc = Shot.surprise(presets, seen);
+            var sh = Shot.build(spec(), presets, Object.assign({}, fc, { outfit: outfit }), l && l.version);
+            if (rec.products) sh.recipe.products = rec.products;
+            seen.unshift(sh.recipe);
+            jobs.push(one(sh, fc));
+          }
+          return jobs;
+        },
+        tag: function (id, recipe) { return Data.setMeta(c, { id: id, uploaded: true }, { recipe: recipe, spec_version: recipe.spec_version || (l ? l.version : null) }); },
+        reload: function () { document.dispatchEvent(new CustomEvent("persona:reload")); },
+      });
     }
     $("sp-build").onclick = function () { build(pick()); };
     $("sp-surprise").onclick = function () { var ch = Shot.surprise(presets, recent()); var cur = pick(); ch.outfit = cur.outfit; ch.model = cur.model; ch.budget = cur.budget; build(ch); };
@@ -325,6 +349,7 @@
       catch (e) { say($("sp-recmsg"), "Couldn't read that recipe: " + e.message, true); }
     };
     if (pre) build(Object.assign({}, pre));
+    else if (S.built) build(Object.assign({}, S.built)); // keep the last shot (and its generated images) on screen
   }
 
   // ---------- Drift guard ----------
@@ -401,7 +426,7 @@
       var prev = S.prevIds[c.slug];
       S.c = c; S.list = list;
       S.prevIds[c.slug] = list.map(function (im) { return im.id; });
-      if (changed) { S.form = null; S.loadedFrom = null; S.choice = null; S.last = null; S.pending = null; S.hashing = false; S.wear = []; }
+      if (changed) { S.form = null; S.loadedFrom = null; S.choice = null; S.last = null; S.pending = null; S.hashing = false; S.wear = []; S.built = null; }
       $("subtabs").hidden = false;
       return Promise.all([presetsReady, Data.versions(c.slug).catch(function (e) { if (notOn(e)) S.off = true; return []; }),
         Data.meta(c.slug).catch(function (e) { if (notOn(e)) S.off = true; return {}; })]).then(function (r) {
