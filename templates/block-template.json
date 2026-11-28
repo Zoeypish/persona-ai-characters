@@ -1,0 +1,93 @@
+{
+  "about": "Persona block format, version 1. A block is one small, typed piece of a character that anyone can reuse. Combine blocks in Studio to make a new character. A character is a recipe that points to blocks by address, so remixes keep their family tree.",
+  "persona_block": 1,
+  "address": "type@name/vN, e.g. face@sienna/v2 (set by Persona when you publish)",
+  "type": "one of: face, body, hair, wardrobe, camera, light, location, mood, pose, motion, scene",
+  "name": "short lowercase name with dashes, e.g. sienna or golden-hour. The first person to publish a name owns it; new versions keep the name.",
+  "version": "1, 2, 3... (set by Persona). A published version never changes.",
+  "title": "Display name, e.g. Sienna",
+  "author": "who made it (set by Persona)",
+  "preview": "https:// link to a preview image",
+  "remix_of": "address of the block this one was remixed from, e.g. face@sienna/v1 (keeps the family tree)",
+  "likeness": "faces only: must be \"invented\". Faces of real people or celebrities are not allowed.",
+  "tags": [
+    "up to 8 short words"
+  ],
+  "data": {
+    "face": {
+      "age_range": "",
+      "face": "",
+      "eyes": "",
+      "skin": "",
+      "signature_detail": "",
+      "never_change": [
+        "traits that must never change"
+      ]
+    },
+    "body": {
+      "build": "",
+      "height": "",
+      "details": ""
+    },
+    "hair": {
+      "colour": "",
+      "length": "",
+      "cut": "",
+      "texture": ""
+    },
+    "wardrobe": {
+      "outfit": "",
+      "style": [
+        "style words"
+      ],
+      "palette": [
+        "colours"
+      ]
+    },
+    "camera": {
+      "description": "lens, framing and angle",
+      "full_outfit": true
+    },
+    "light": {
+      "description": ""
+    },
+    "location": {
+      "description": ""
+    },
+    "mood": {
+      "feeling": "",
+      "expression": "",
+      "grade": "colour grade",
+      "keywords": [
+        "mood words"
+      ]
+    },
+    "pose": {
+      "description": ""
+    },
+    "motion": {
+      "description": "movement: wind, fabric, hair"
+    },
+    "scene": {
+      "description": "the set-up and story",
+      "props": [
+        "props"
+      ]
+    }
+  },
+  "character_recipe_example": {
+    "persona_character": 1,
+    "name": "Lena Noir",
+    "blocks": {
+      "face": "face@sienna/v2",
+      "hair": "hair@pink-bob/v1",
+      "wardrobe": "wardrobe@tailored-noir/v1",
+      "mood": "mood@noir/v1",
+      "camera": "camera@35-full/v1"
+    },
+    "remix_of": null,
+    "included": [
+      "full copies of each block, so the file works anywhere"
+    ]
+  }
+}

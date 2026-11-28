@@ -1,0 +1,505 @@
+{
+ "about": "Persona starter blocks (face, body, hair, wardrobe, mood). Every face here is invented. Camera, light, location and pose starters come from presets.json. Run `node scripts/build-blocks.js` after editing to rebuild templates/blocks.json and the seed part of supabase/character-blocks.sql.",
+ "blocks": [
+  {
+   "type": "face",
+   "name": "sienna",
+   "version": 1,
+   "title": "Sienna",
+   "likeness": "invented",
+   "tags": [
+    "soft",
+    "warm"
+   ],
+   "data": {
+    "age_range": "mid 20s",
+    "face": "soft oval face, high cheekbones, full lips",
+    "eyes": "hazel almond-shaped",
+    "skin": "warm olive skin",
+    "signature_detail": "a small beauty mark under the left eye",
+    "never_change": [
+     "beauty mark under left eye",
+     "hazel eyes"
+    ]
+   }
+  },
+  {
+   "type": "face",
+   "name": "sienna",
+   "version": 2,
+   "title": "Sienna",
+   "likeness": "invented",
+   "tags": [
+    "soft",
+    "warm",
+    "freckles"
+   ],
+   "remix_of": "face@sienna/v1",
+   "data": {
+    "age_range": "mid 20s",
+    "face": "soft oval face, high cheekbones, full lips",
+    "eyes": "hazel almond-shaped",
+    "skin": "warm olive skin with light freckles across the nose",
+    "signature_detail": "a small beauty mark under the left eye",
+    "never_change": [
+     "beauty mark under left eye",
+     "hazel eyes",
+     "nose freckles"
+    ]
+   }
+  },
+  {
+   "type": "face",
+   "name": "juno",
+   "version": 1,
+   "title": "Juno",
+   "likeness": "invented",
+   "tags": [
+    "bold",
+    "graphic"
+   ],
+   "data": {
+    "age_range": "early 20s",
+    "face": "angular face, strong jaw, straight brows",
+    "eyes": "dark brown hooded",
+    "skin": "deep brown skin with a satin finish",
+    "signature_detail": "a thin gold septum ring",
+    "never_change": [
+     "septum ring",
+     "straight brows"
+    ]
+   }
+  },
+  {
+   "type": "face",
+   "name": "mika",
+   "version": 1,
+   "title": "Mika",
+   "likeness": "invented",
+   "tags": [
+    "playful",
+    "round"
+   ],
+   "data": {
+    "age_range": "early 20s",
+    "face": "round face, button nose, dimples when smiling",
+    "eyes": "dark monolid",
+    "skin": "light golden skin",
+    "signature_detail": "two tiny star tattoos by the right eye",
+    "never_change": [
+     "star tattoos by right eye",
+     "dimples"
+    ]
+   }
+  },
+  {
+   "type": "face",
+   "name": "odette",
+   "version": 1,
+   "title": "Odette",
+   "likeness": "invented",
+   "tags": [
+    "classic",
+    "elegant"
+   ],
+   "data": {
+    "age_range": "early 30s",
+    "face": "long face, defined cheekbones, narrow nose",
+    "eyes": "pale grey-blue",
+    "skin": "fair skin with a cool undertone",
+    "signature_detail": "a faint scar through the right eyebrow",
+    "never_change": [
+     "eyebrow scar",
+     "grey-blue eyes"
+    ]
+   }
+  },
+  {
+   "type": "face",
+   "name": "rafe",
+   "version": 1,
+   "title": "Rafe",
+   "likeness": "invented",
+   "tags": [
+    "rugged",
+    "warm"
+   ],
+   "data": {
+    "age_range": "late 20s",
+    "face": "square face, short stubble, broad nose",
+    "eyes": "warm brown",
+    "skin": "tan skin",
+    "signature_detail": "a chipped front tooth that shows when he grins",
+    "never_change": [
+     "chipped front tooth",
+     "stubble"
+    ]
+   }
+  },
+  {
+   "type": "face",
+   "name": "tavi",
+   "version": 1,
+   "title": "Tavi",
+   "likeness": "invented",
+   "tags": [
+    "androgynous",
+    "cool"
+   ],
+   "data": {
+    "age_range": "mid 20s",
+    "face": "heart-shaped face, sharp chin, thick dark brows",
+    "eyes": "green, slightly upturned",
+    "skin": "pale skin with rosy cheeks",
+    "signature_detail": "a silver ear cuff on the left ear",
+    "never_change": [
+     "left ear cuff",
+     "green eyes"
+    ]
+   }
+  },
+  {
+   "type": "hair",
+   "name": "pink-bob",
+   "version": 1,
+   "title": "Pink bob",
+   "data": {
+    "colour": "pastel pink",
+    "length": "chin-length",
+    "cut": "blunt bob with a fringe",
+    "texture": "glossy and straight"
+   }
+  },
+  {
+   "type": "hair",
+   "name": "silver-crop",
+   "version": 1,
+   "title": "Silver crop",
+   "data": {
+    "colour": "silver",
+    "length": "short",
+    "cut": "textured pixie crop",
+    "texture": "matte"
+   }
+  },
+  {
+   "type": "hair",
+   "name": "long-waves",
+   "version": 1,
+   "title": "Long waves",
+   "data": {
+    "colour": "dark chocolate brown",
+    "length": "long",
+    "cut": "loose layers",
+    "texture": "soft beachy waves"
+   }
+  },
+  {
+   "type": "hair",
+   "name": "box-braids",
+   "version": 1,
+   "title": "Box braids",
+   "data": {
+    "colour": "black with honey-blonde ends",
+    "length": "waist-length",
+    "cut": "box braids, often in a high ponytail"
+   }
+  },
+  {
+   "type": "hair",
+   "name": "buzz",
+   "version": 1,
+   "title": "Buzz cut",
+   "data": {
+    "colour": "bleached platinum",
+    "length": "very short",
+    "cut": "even buzz cut"
+   }
+  },
+  {
+   "type": "body",
+   "name": "tall-slim",
+   "version": 1,
+   "title": "Tall and slim",
+   "data": {
+    "build": "slim, long-limbed",
+    "height": "tall, about 178 cm"
+   }
+  },
+  {
+   "type": "body",
+   "name": "petite",
+   "version": 1,
+   "title": "Petite",
+   "data": {
+    "build": "petite and small-framed",
+    "height": "about 158 cm"
+   }
+  },
+  {
+   "type": "body",
+   "name": "athletic",
+   "version": 1,
+   "title": "Athletic",
+   "data": {
+    "build": "athletic with toned shoulders",
+    "height": "about 170 cm"
+   }
+  },
+  {
+   "type": "body",
+   "name": "curvy",
+   "version": 1,
+   "title": "Curvy",
+   "data": {
+    "build": "soft curves, full hips",
+    "height": "about 165 cm"
+   }
+  },
+  {
+   "type": "wardrobe",
+   "name": "minimal-mono",
+   "version": 1,
+   "title": "Minimal mono",
+   "tags": [
+    "minimal"
+   ],
+   "data": {
+    "outfit": "oversized black blazer, crisp white tee, straight black trousers, leather loafers",
+    "style": [
+     "minimal",
+     "monochrome"
+    ],
+    "palette": [
+     "black",
+     "white",
+     "chrome"
+    ]
+   }
+  },
+  {
+   "type": "wardrobe",
+   "name": "street-layers",
+   "version": 1,
+   "title": "Street layers",
+   "tags": [
+    "streetwear"
+   ],
+   "data": {
+    "outfit": "boxy hoodie under a cropped puffer, cargo pants, chunky sneakers, a beanie",
+    "style": [
+     "streetwear",
+     "layered"
+    ],
+    "palette": [
+     "olive",
+     "grey",
+     "orange"
+    ]
+   }
+  },
+  {
+   "type": "wardrobe",
+   "name": "boho-linen",
+   "version": 1,
+   "title": "Boho linen",
+   "tags": [
+    "boho"
+   ],
+   "data": {
+    "outfit": "loose cream linen dress, woven belt, leather sandals, stacked gold bangles",
+    "style": [
+     "boho",
+     "relaxed"
+    ],
+    "palette": [
+     "cream",
+     "sand",
+     "terracotta"
+    ]
+   }
+  },
+  {
+   "type": "wardrobe",
+   "name": "y2k-party",
+   "version": 1,
+   "title": "Y2K party",
+   "tags": [
+    "y2k",
+    "party"
+   ],
+   "data": {
+    "outfit": "silver halter top, low-rise satin mini skirt, platform boots, tinted sunglasses",
+    "style": [
+     "y2k",
+     "party"
+    ],
+    "palette": [
+     "silver",
+     "baby pink",
+     "lilac"
+    ]
+   }
+  },
+  {
+   "type": "wardrobe",
+   "name": "tailored-noir",
+   "version": 1,
+   "title": "Tailored noir",
+   "tags": [
+    "tailored"
+   ],
+   "data": {
+    "outfit": "long charcoal wool coat, black turtleneck, wide-leg trousers, pointed ankle boots",
+    "style": [
+     "tailored",
+     "dark"
+    ],
+    "palette": [
+     "charcoal",
+     "black",
+     "oxblood"
+    ]
+   }
+  },
+  {
+   "type": "mood",
+   "name": "noir",
+   "version": 1,
+   "title": "Noir",
+   "data": {
+    "feeling": "moody and mysterious",
+    "expression": "a cool, unreadable look",
+    "grade": "deep shadows, desaturated colour, fine film grain",
+    "keywords": [
+     "noir",
+     "cinematic"
+    ]
+   }
+  },
+  {
+   "type": "mood",
+   "name": "dreamy",
+   "version": 1,
+   "title": "Dreamy",
+   "data": {
+    "feeling": "soft and dreamy",
+    "expression": "eyes half closed, gentle smile",
+    "grade": "hazy pastel tones, soft bloom",
+    "keywords": [
+     "dreamy",
+     "soft"
+    ]
+   }
+  },
+  {
+   "type": "mood",
+   "name": "playful",
+   "version": 1,
+   "title": "Playful",
+   "data": {
+    "feeling": "playful and high-energy",
+    "expression": "big open laugh",
+    "grade": "bright saturated colour, punchy contrast",
+    "keywords": [
+     "playful",
+     "fun"
+    ]
+   }
+  },
+  {
+   "type": "mood",
+   "name": "editorial-cool",
+   "version": 1,
+   "title": "Editorial cool",
+   "data": {
+    "feeling": "confident and detached",
+    "expression": "neutral face, chin slightly raised",
+    "grade": "clean, crisp, magazine colour",
+    "keywords": [
+     "editorial"
+    ]
+   }
+  },
+  {
+   "type": "mood",
+   "name": "nostalgic",
+   "version": 1,
+   "title": "Nostalgic",
+   "data": {
+    "feeling": "warm and nostalgic",
+    "expression": "a small wistful smile",
+    "grade": "warm faded film tones, slight light leaks",
+    "keywords": [
+     "vintage",
+     "film"
+    ]
+   }
+  },
+  {
+   "type": "motion",
+   "name": "breeze",
+   "version": 1,
+   "title": "Breeze",
+   "data": {
+    "description": "a soft breeze moving the hair and the hem of the clothes"
+   }
+  },
+  {
+   "type": "motion",
+   "name": "wind-gust",
+   "version": 1,
+   "title": "Wind gust",
+   "data": {
+    "description": "a strong gust of wind lifting the coat and hair, fabric in motion"
+   }
+  },
+  {
+   "type": "motion",
+   "name": "mid-spin",
+   "version": 1,
+   "title": "Mid-spin",
+   "data": {
+    "description": "caught mid-spin, skirt and hair flaring out, slight motion blur"
+   }
+  },
+  {
+   "type": "scene",
+   "name": "coffee-run",
+   "version": 1,
+   "title": "Coffee run",
+   "data": {
+    "description": "on a morning coffee run",
+    "props": [
+     "takeaway coffee cup",
+     "tote bag"
+    ]
+   }
+  },
+  {
+   "type": "scene",
+   "name": "shopping-day",
+   "version": 1,
+   "title": "Shopping day",
+   "data": {
+    "description": "after a day of shopping",
+    "props": [
+     "paper shopping bags"
+    ]
+   }
+  },
+  {
+   "type": "scene",
+   "name": "night-out",
+   "version": 1,
+   "title": "Night out",
+   "data": {
+    "description": "heading out for the night",
+    "props": [
+     "small clutch bag",
+     "phone in hand"
+    ]
+   }
+  }
+ ]
+}
