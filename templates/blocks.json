@@ -582,6 +582,107 @@
   },
   {
    "persona_block": 1,
+   "address": "motion@breeze/v1",
+   "type": "motion",
+   "name": "breeze",
+   "version": 1,
+   "title": "Breeze",
+   "author": "Persona",
+   "preview": null,
+   "data": {
+    "description": "a soft breeze moving the hair and the hem of the clothes"
+   },
+   "remix_of": null,
+   "tags": []
+  },
+  {
+   "persona_block": 1,
+   "address": "motion@wind-gust/v1",
+   "type": "motion",
+   "name": "wind-gust",
+   "version": 1,
+   "title": "Wind gust",
+   "author": "Persona",
+   "preview": null,
+   "data": {
+    "description": "a strong gust of wind lifting the coat and hair, fabric in motion"
+   },
+   "remix_of": null,
+   "tags": []
+  },
+  {
+   "persona_block": 1,
+   "address": "motion@mid-spin/v1",
+   "type": "motion",
+   "name": "mid-spin",
+   "version": 1,
+   "title": "Mid-spin",
+   "author": "Persona",
+   "preview": null,
+   "data": {
+    "description": "caught mid-spin, skirt and hair flaring out, slight motion blur"
+   },
+   "remix_of": null,
+   "tags": []
+  },
+  {
+   "persona_block": 1,
+   "address": "scene@coffee-run/v1",
+   "type": "scene",
+   "name": "coffee-run",
+   "version": 1,
+   "title": "Coffee run",
+   "author": "Persona",
+   "preview": null,
+   "data": {
+    "description": "on a morning coffee run",
+    "props": [
+     "takeaway coffee cup",
+     "tote bag"
+    ]
+   },
+   "remix_of": null,
+   "tags": []
+  },
+  {
+   "persona_block": 1,
+   "address": "scene@shopping-day/v1",
+   "type": "scene",
+   "name": "shopping-day",
+   "version": 1,
+   "title": "Shopping day",
+   "author": "Persona",
+   "preview": null,
+   "data": {
+    "description": "after a day of shopping",
+    "props": [
+     "paper shopping bags"
+    ]
+   },
+   "remix_of": null,
+   "tags": []
+  },
+  {
+   "persona_block": 1,
+   "address": "scene@night-out/v1",
+   "type": "scene",
+   "name": "night-out",
+   "version": 1,
+   "title": "Night out",
+   "author": "Persona",
+   "preview": null,
+   "data": {
+    "description": "heading out for the night",
+    "props": [
+     "small clutch bag",
+     "phone in hand"
+    ]
+   },
+   "remix_of": null,
+   "tags": []
+  },
+  {
+   "persona_block": 1,
    "address": "camera@35-full/v1",
    "type": "camera",
    "name": "35-full",

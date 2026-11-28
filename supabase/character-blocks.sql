@@ -3,7 +3,7 @@
 -- Needs the earlier setup files (creator-api.sql, accounts-and-safety.sql), which are already live.
 --
 -- What it adds:
---   1. blocks: small typed JSON pieces (face, body, hair, wardrobe, camera, light, location, mood, pose), each with a
+--   1. blocks: small typed JSON pieces (face, body, hair, wardrobe, camera, light, location, mood, pose, motion, scene), each with a
 --      preview image, author and version. Addressed like face@sienna/v2. A saved version never changes.
 --   2. combos: characters built from blocks (a recipe that points to block addresses), with a remix_of link (family tree).
 --   3. block_uses + points: when someone else uses your block for the first time, you get 1 point.
@@ -15,7 +15,7 @@
 -- =====================================================================================
 create table if not exists public.blocks (
   address     text primary key,                         -- type@name/vN, e.g. face@sienna/v2
-  type        text not null check (type in ('face','body','hair','wardrobe','camera','light','location','mood','pose')),
+  type        text not null check (type in ('face','body','hair','wardrobe','camera','light','location','mood','pose','motion','scene')),
   name        text not null check (name ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and length(name) <= 40),
   version     integer not null check (version between 1 and 9999),
   title       text not null check (length(btrim(title)) between 1 and 60),
@@ -53,8 +53,8 @@ begin
   if uid is null then raise exception 'Please sign in first.' using errcode = '28000'; end if;
   if p_block is null or jsonb_typeof(p_block) <> 'object' then raise exception 'That isn''t a block.' using errcode = '22023'; end if;
   t := p_block->>'type'; n := p_block->>'name';
-  if t is null or t not in ('face','body','hair','wardrobe','camera','light','location','mood','pose') then
-    raise exception 'A block needs a type: face, body, hair, wardrobe, camera, light, location, mood or pose.' using errcode = '22023'; end if;
+  if t is null or t not in ('face','body','hair','wardrobe','camera','light','location','mood','pose','motion','scene') then
+    raise exception 'A block needs a type: face, body, hair, wardrobe, camera, light, location, mood, pose, motion or scene.' using errcode = '22023'; end if;
   if n is null or n !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or length(n) > 40 then
     raise exception 'Give the block a short name, like sienna or golden-hour.' using errcode = '22023'; end if;
   if t = 'face' and coalesce(p_block->>'likeness', '') <> 'invented' then
@@ -238,6 +238,12 @@ insert into public.blocks (address, type, name, version, title, data, preview_ur
   ('mood@playful/v1', 'mood', 'playful', 1, 'Playful', '{"feeling":"playful and high-energy","expression":"big open laugh","grade":"bright saturated colour, punchy contrast","keywords":["playful","fun"]}'::jsonb, null, array[]::text[], null, null, 'Persona'),
   ('mood@editorial-cool/v1', 'mood', 'editorial-cool', 1, 'Editorial cool', '{"feeling":"confident and detached","expression":"neutral face, chin slightly raised","grade":"clean, crisp, magazine colour","keywords":["editorial"]}'::jsonb, null, array[]::text[], null, null, 'Persona'),
   ('mood@nostalgic/v1', 'mood', 'nostalgic', 1, 'Nostalgic', '{"feeling":"warm and nostalgic","expression":"a small wistful smile","grade":"warm faded film tones, slight light leaks","keywords":["vintage","film"]}'::jsonb, null, array[]::text[], null, null, 'Persona'),
+  ('motion@breeze/v1', 'motion', 'breeze', 1, 'Breeze', '{"description":"a soft breeze moving the hair and the hem of the clothes"}'::jsonb, null, array[]::text[], null, null, 'Persona'),
+  ('motion@wind-gust/v1', 'motion', 'wind-gust', 1, 'Wind gust', '{"description":"a strong gust of wind lifting the coat and hair, fabric in motion"}'::jsonb, null, array[]::text[], null, null, 'Persona'),
+  ('motion@mid-spin/v1', 'motion', 'mid-spin', 1, 'Mid-spin', '{"description":"caught mid-spin, skirt and hair flaring out, slight motion blur"}'::jsonb, null, array[]::text[], null, null, 'Persona'),
+  ('scene@coffee-run/v1', 'scene', 'coffee-run', 1, 'Coffee run', '{"description":"on a morning coffee run","props":["takeaway coffee cup","tote bag"]}'::jsonb, null, array[]::text[], null, null, 'Persona'),
+  ('scene@shopping-day/v1', 'scene', 'shopping-day', 1, 'Shopping day', '{"description":"after a day of shopping","props":["paper shopping bags"]}'::jsonb, null, array[]::text[], null, null, 'Persona'),
+  ('scene@night-out/v1', 'scene', 'night-out', 1, 'Night out', '{"description":"heading out for the night","props":["small clutch bag","phone in hand"]}'::jsonb, null, array[]::text[], null, null, 'Persona'),
   ('camera@35-full/v1', 'camera', '35-full', 1, '35mm full body', '{"description":"full-body shot on a 35mm lens at eye level, head to shoes in frame","full_outfit":true,"preset":"cam-35-full"}'::jsonb, null, array[]::text[], null, null, 'Persona'),
   ('camera@50-three-quarter/v1', 'camera', '50-three-quarter', 1, '50mm three-quarter', '{"description":"three-quarter length shot on a 50mm lens, from mid-thigh up, eye level","full_outfit":true,"preset":"cam-50-three-quarter"}'::jsonb, null, array[]::text[], null, null, 'Persona'),
   ('camera@85-portrait/v1', 'camera', '85-portrait', 1, '85mm portrait', '{"description":"head-and-shoulders portrait on an 85mm lens, shallow depth of field, eyes in sharp focus","preset":"cam-85-portrait"}'::jsonb, null, array[]::text[], null, null, 'Persona'),
