@@ -17,6 +17,17 @@ Every item has keywords, and results are ranked in this order:
 Keywords live in `data.js` (`SEARCH_TAGS`, for characters and the built-in images) and `search-index.json` (products).
 After refreshing the product list, rebuild the index: `python3 scripts/build-search-index.py path/to/persona_products.csv`.
 
+## Homepage feed
+The homepage ("All") is a personal mix for each visitor, built in `feed.js`:
+- **50%** pins from characters they follow
+- **35%** pins similar to what they follow (shared style keywords from `SEARCH_TAGS` in `data.js`)
+- **15%** random pins from everyone else
+
+Pins they haven't seen yet come first, newest first; pins already seen move to the end, so the top of the feed keeps changing.
+A pin counts as seen once half of it has been on screen (kept in the visitor's browser, like follows and saves).
+If they follow nobody, "similar" uses their saved pins; with no follows and no saves the feed is fresh pins from everyone.
+Pins from the same character are still never side by side or stacked.
+
 ## Run locally
 Serve the folder with any static server, for example `python3 -m http.server`, and open http://localhost:8000.
 Without Supabase it runs in **demo mode**: uploads and choices are saved in your browser only.
