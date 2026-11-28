@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Takedown request — Persona</title>
+<meta name="description" content="Ask Persona to remove an image that uses your work or your likeness without permission.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header id="nav"></header>
+
+<main class="legal">
+  <div class="eyebrow">Persona</div>
+  <h1>Takedown request</h1>
+  <p class="legal-lead">If an image on Persona uses your work, or shows you, without your permission, tell us here. You don't need an account. We hide reported images while we check.</p>
+
+  <form class="td-form" id="td" autocomplete="on">
+    <label>What is this about?
+      <select name="reason" required>
+        <option value="real_person">It shows me (or someone I represent) without consent</option>
+        <option value="copyright">It uses my work without permission</option>
+        <option value="minor">It puts a child at risk</option>
+        <option value="sexual">It's sexual or nude content</option>
+        <option value="other">Something else</option>
+        <option value="appeal">Appeal a decision about my image</option>
+      </select>
+    </label>
+    <label>Link to the image or character on Persona
+      <input name="page_url" type="url" required placeholder="https://persona-ai-characters.vercel.app/profile.html?c=…">
+    </label>
+    <label>Tell us more
+      <textarea name="details" rows="5" maxlength="2000" required placeholder="Which image, and why it should come down. For your own work, a link to the original helps."></textarea>
+    </label>
+    <div class="td-two">
+      <label>Your name<input name="contact_name" required maxlength="120" autocomplete="name"></label>
+      <label>Your email<input name="contact_email" type="email" required maxlength="200" autocomplete="email"></label>
+    </div>
+    <label class="rights"><input type="checkbox" name="owner"> <span>I am the person shown, the rights owner, or authorised to act for them.</span></label>
+    <label class="rights"><input type="checkbox" name="truth" required> <span>The information in this request is accurate, and I believe in good faith that this use isn't allowed.</span></label>
+    <div class="report-row"><button class="btn" type="submit" id="td-go">Send request</button><span class="err" id="td-err" role="alert"></span></div>
+    <p class="muted">We only use your details to handle this request, and may share your name with the creator if the law requires it.</p>
+  </form>
+  <div class="td-done" id="td-done" hidden>
+    <h2>Thanks, we got your request.</h2>
+    <p>We'll review it and reply by email. If the image breaks our <a href="content-policy.html">Content Policy</a>, it comes down.</p>
+    <p><a class="btn ghost" href="./">Back to Persona</a></p>
+  </div>
+</main>
+<footer>
+  <span>© Persona 2026 · <a href="brand.html">Brand</a> · <a href="studio.html">Studio</a> · <a href="content-policy.html">Content Policy</a> · <a href="terms.html">Terms</a> · <a href="takedown.html">Takedown request</a></span>
+  <span>Every character on Persona is virtual. Images are AI-generated.</span>
+</footer>
+<script src="vendor/supabase-js-2.119.0.js"></script>
+<script src="config.js"></script>
+<script src="api/config"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script src="app.js"></script>
+<script src="search.js"></script>
+<script>
+  var q = new URLSearchParams(location.search), f = document.getElementById("td");
+  if (q.get("reason")) f.reason.value = q.get("reason");
+  if (q.get("image") || q.get("c")) f.page_url.value = location.origin + location.pathname.replace(/[^/]*$/, "") + "profile.html?c=" + encodeURIComponent(q.get("c") || "") + (q.get("image") ? "#" + encodeURIComponent(q.get("image")) : "");
+  f.onsubmit = function (e) {
+    e.preventDefault();
+    var btn = document.getElementById("td-go"), err = document.getElementById("td-err");
+    btn.disabled = true; btn.textContent = "Sending…"; err.textContent = "";
+    Studio.takedown({ image_id: q.get("image") || null, character_slug: q.get("c") || null, page_url: f.page_url.value, reason: f.reason.value,
+      details: f.details.value, contact_name: f.contact_name.value, contact_email: f.contact_email.value, is_rights_owner: f.owner.checked })
+      .then(function () { f.hidden = true; document.getElementById("td-done").hidden = false; window.scrollTo(0, 0); },
+        function (x) { err.textContent = x.message || "Couldn't send. Please try again."; btn.disabled = false; btn.textContent = "Send request"; });
+  };
+</script>
+</body>
+</html>
