@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" href="mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="creator-tools.css">
 </head>
 <body>
 <header id="nav"></header>
@@ -30,6 +31,8 @@
   <div class="allowance" id="allowance"></div>
 
   <div class="tabs" id="tabs"></div>
+  <div class="subtabs" id="subtabs" hidden></div>
+  <section class="ct sp" id="sp-panel" hidden></section>
 
   <form class="newchar" id="newchar" hidden autocomplete="off">
     <h2 id="newchar-title">New character</h2>
@@ -77,6 +80,8 @@
 <script src="data.js"></script>
 <script src="store.js"></script>
 <script src="app.js"></script>
+<script src="lib/shot.js"></script>
+<script src="studio-registry.js"></script>
 <script>
   var current = null, user = null, mine = [];
   function bySlug(s) { return CHARACTERS.filter(function (c) { return c.slug === s; })[0]; }
@@ -86,6 +91,7 @@
     MAIN.forEach(function (id) { document.getElementById(id).hidden = !on; });
     document.querySelector(".studio-bar").hidden = !on;
     document.getElementById("view").hidden = !on;
+    if (!on && window.StudioPlus) StudioPlus.hide();
   }
 
   Promise.all([Studio.session(), Studio.ready]).then(function (r) {
@@ -143,6 +149,7 @@
     Studio.all(c).then(function (list) {
       var liveN = list.filter(function (i) { return i.live; }).length;
       document.getElementById("count").textContent = liveN + " of " + list.length + " live";
+      if (window.StudioPlus) StudioPlus.show(c, list);
       var grid = document.getElementById("grid");
       if (!list.length) { grid.innerHTML = '<p class="empty" style="grid-column:1/-1">No images yet. Upload the first ones above.</p>'; return; }
       grid.innerHTML = list.map(function (im, i) {

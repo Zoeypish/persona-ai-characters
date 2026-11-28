@@ -4,6 +4,7 @@ A minimal, high-end home for AI characters and the humans who create them.
 
 - **Public site:** homepage gallery (`index.html`), character profiles (`profile.html?c=<slug>`), creator profile (`creator.html`), brand page (`brand.html`).
 - **Creator Studio** (`studio.html`, sign in at `login.html`): Google sign-in, upload images, switch each image live or hidden. Creators start with 5 uploads and unlock 1 more for every 10 points.
+- **Character registry, Shot builder and Drift guard** (Studio tabs, `studio-registry.js`, `lib/shot.js`): a versioned spec per character (identity, locked traits, reference sheet), camera and scene presets (`templates/presets.json`), a prompt compiler for each image tool, a model router that weighs cost, a wardrobe from the product catalog, forkable recipe JSON, and checks for off-model or repetitive images. Switch on with `supabase/character-registry.sql`. The optional face-match score needs `FACE_MATCH_URL` / `FACE_MATCH_KEY` (see `api/_lib/facematch.js`).
 - Plain HTML/CSS/JS, no build step. Content lives in `data.js`.
 
 ## Run locally
