@@ -4,8 +4,8 @@
 // plus the network's own placeholders for: click (our click id / sub id), order, sale, commission,
 // currency, status. Common names (subid, clickref, sid, u1, order_id, amount...) are understood too.
 "use strict";
-const { db } = require("./_lib/shop");
-const { body } = require("./_lib/persona");
+const { db } = require("../_lib/shop");
+const { body } = require("../_lib/persona");
 
 function first(o, keys) { for (const k of keys) if (o[k] != null && o[k] !== "") return String(o[k]); return null; }
 function num(v) { const n = parseFloat(String(v == null ? "" : v).replace(/[^0-9.-]/g, "")); return isFinite(n) ? n : null; }

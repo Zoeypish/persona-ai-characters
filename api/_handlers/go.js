@@ -2,7 +2,7 @@
 // Logs the click (so a later sale is credited to the right character and creator), picks the
 // affiliate link that pays the most for this item, and sends the shopper to the store.
 "use strict";
-const { db, buildAffiliateUrl } = require("./_lib/shop");
+const { db, buildAffiliateUrl } = require("../_lib/shop");
 
 function redirect(res, url) {
   res.statusCode = 302;
