@@ -1,0 +1,32 @@
+{
+  "name": "Nova Reyes",
+  "handle": "@novareyes",
+  "bio": "Night-shift DJ and amateur astronomer from Toronto. Nova dresses for the walk home at 4 AM: oversized, warm and always one chrome detail. Collects vinyl and constellations.",
+  "look": {
+    "age_range": "mid 20s",
+    "face": "Oval face, warm olive skin, dark brown eyes, a small beauty mark under the left eye",
+    "hair": "Jet-black blunt bob with a short fringe",
+    "signature_detail": "A single chrome star ear cuff on the right ear"
+  },
+  "style": {
+    "keywords": ["night-time minimal", "oversized", "monochrome", "chrome accents"],
+    "palette": ["black", "charcoal", "cream", "chrome"],
+    "brands_that_fit": ["Represent", "Fear of God", "Khaite", "Cult Gaia"]
+  },
+  "world": {
+    "home_city": "Toronto, Canada",
+    "personality": ["calm", "nocturnal", "quietly funny"],
+    "voice": "Short lowercase captions, one emoji at most"
+  },
+  "image_rules": {
+    "framing": "Full outfit visible in at least 4 of 6 images",
+    "orientation": "Portrait 2:3, 1536 px tall",
+    "consistency": "Same bob, beauty mark and star ear cuff every time",
+    "avoid": ["text on the image", "busy daytime crowds", "bright neon colours"]
+  },
+  "image_prompts": [
+    "Full-body photo of Nova Reyes, a woman in her mid 20s with a jet-black blunt bob with short fringe, warm olive skin, small beauty mark under her left eye and a chrome star ear cuff, wearing an oversized charcoal hoodie, black wide-leg trousers and chunky black boots, standing on an empty Toronto street at night under a sodium streetlight, 35mm film photo, soft grain, portrait orientation",
+    "Close portrait of Nova Reyes (same face, bob, beauty mark and star ear cuff), cream cashmere turtleneck, looking past the camera, dark studio background with one soft key light, editorial beauty photo",
+    "Nova Reyes sitting cross-legged on the floor of a small apartment sorting vinyl records, black oversized tee and cream knit cardigan, warm lamp light, full outfit visible, candid lifestyle photo, portrait orientation"
+  ]
+}
