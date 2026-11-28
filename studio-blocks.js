@@ -7,7 +7,7 @@
   var TYPES = Blocks.TYPES;
   var REASONS = [["real_person", "Copies a real person"], ["copyright", "Copies someone else's work"], ["sexual", "Sexual content"], ["minor", "Looks like a minor"],
     ["hate", "Hateful"], ["spam", "Spam"], ["other", "Something else"]];
-  var S = { ready: null, lib: [], drafts: [], uses: {}, pick: {}, slot: null, sort: "suggested", q: "", old: false, off: false, parent: null,
+  var S = { ready: null, lib: [], drafts: [], uses: {}, pick: {}, slot: null, sort: "suggested", src: "all", q: "", old: false, off: false, parent: null,
     user: null, chars: [], current: null, msg: "", bad: false, model: null, presets: null, images: [] };
 
   // ---------- helpers ----------
@@ -39,6 +39,14 @@
     list.forEach(function (b) { var k = b.type + "@" + b.name; if (!top[k] || top[k].version < b.version) top[k] = b; });
     return list.filter(function (b) { return top[b.type + "@" + b.name] === b; });
   }
+  // Where a block comes from: yours, community, Persona starters or the Persona House library.
+  function source(b) {
+    if (b.mine) return "mine";
+    if (b.author === "Persona House" || (b.tags || [])[0] === "house") return "house";
+    if (b.author === "Persona") return "starter";
+    return "community";
+  }
+  var SRC_RANK = { mine: 0, community: 1, starter: 2, house: 3 };
   function versionsOf(b) { return S.lib.filter(function (x) { return x.type === b.type && x.name === b.name; }).length; }
 
   // A block's preview: its image, or a lettered card when it has none.
@@ -148,7 +156,7 @@
       '<div id="cb-result"></div>' +
       '<div id="cb-mine"></div>';
     p.querySelectorAll("[data-slot]").forEach(function (el) {
-      el.onclick = function () { S.slot = S.slot === el.dataset.slot ? null : el.dataset.slot; S.q = ""; render(); if (S.slot) $("cb-picker").scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+      el.onclick = function () { S.slot = S.slot === el.dataset.slot ? null : el.dataset.slot; S.q = ""; S.src = "all"; render(); if (S.slot) $("cb-picker").scrollIntoView({ block: "nearest", behavior: "smooth" }); };
     });
     $("cb-surprise").onclick = function () {
       var s = Blocks.surprise(S.lib.filter(function (b) { return b.visibility === "public" || b.mine; }), S.uses, S.pick);
@@ -167,23 +175,31 @@
     var t = Blocks.type(S.slot), q = S.q.trim().toLowerCase();
     var list = S.lib.filter(function (b) { return b.type === S.slot && b.moderation === "ok" && (b.visibility === "public" || b.mine); });
     if (!S.old) list = newest(list);
+    var srcs = {}; list.forEach(function (b) { srcs[source(b)] = 1; });
+    if (S.src !== "all") list = list.filter(function (b) { return source(b) === S.src; });
     if (q) list = list.filter(function (b) { return (b.title + " " + b.name + " " + (b.tags || []).join(" ") + " " + b.author + " " + Blocks.phrase(b)).toLowerCase().indexOf(q) > -1; });
     var u = function (b) { return S.uses[b.address] || 0; };
     list.sort(function (a, b) {
       if (S.sort === "used") return u(b) - u(a);
       if (S.sort === "new") return String(b.created_at || "").localeCompare(String(a.created_at || "")) || b.version - a.version;
       // Suggested: faces that fewer characters use come first (variety); for everything else, the most used.
-      if (S.slot === "face") return (u(a) >= Blocks.POPULAR_FACE) - (u(b) >= Blocks.POPULAR_FACE) || (b.mine - a.mine) || (a.author === "Persona") - (b.author === "Persona") || u(a) - u(b);
-      return (b.mine - a.mine) || u(b) - u(a);
+      // Then yours, community, starters, and the large house library last.
+      var r = SRC_RANK[source(a)] - SRC_RANK[source(b)];
+      if (S.slot === "face") return (u(a) >= Blocks.POPULAR_FACE) - (u(b) >= Blocks.POPULAR_FACE) || r || u(a) - u(b);
+      return r || u(b) - u(a);
     });
     box.innerHTML = '<div class="cb-picker"><div class="cb-picker-top"><h3>Choose a ' + t.name.toLowerCase() + ' block</h3>' +
       '<input type="text" id="cb-q" placeholder="Search ' + t.name.toLowerCase() + ' blocks" value="' + esc(S.q) + '" aria-label="Search blocks">' +
+      '<select id="cb-src" aria-label="Show"><option value="all">All blocks</option>' +
+      [["mine", "Yours"], ["community", "Community"], ["starter", "Starters"], ["house", "House library"]].filter(function (o) { return srcs[o[0]] || S.src === o[0]; })
+        .map(function (o) { return '<option value="' + o[0] + '">' + o[1] + "</option>"; }).join("") + "</select>" +
       '<select id="cb-sort" aria-label="Sort"><option value="suggested">Suggested</option><option value="used">Most used</option><option value="new">Newest</option></select>' +
       '<label class="cb-old"><input type="checkbox" id="cb-oldv"' + (S.old ? " checked" : "") + "> Older versions</label>" +
       '<button class="btn" id="cb-new">+ New ' + t.name.toLowerCase() + " block</button></div>" +
       (S.slot === "face" ? '<p class="cb-rule">Faces must be invented. Faces copied from real people or celebrities aren\'t allowed, and you can report one with the ⚑ button.</p>' : "") +
       '<div class="cb-cards">' + (list.length ? list.map(card).join("") : '<p class="empty">No blocks match. Make the first one.</p>') + "</div></div>";
-    $("cb-sort").value = S.sort;
+    $("cb-sort").value = S.sort; $("cb-src").value = S.src;
+    $("cb-src").onchange = function (e) { S.src = e.target.value; renderPicker(); };
     $("cb-q").oninput = function (e) { S.q = e.target.value; var pos = e.target.selectionStart; renderPicker(); var i = $("cb-q"); i.focus(); i.setSelectionRange(pos, pos); };
     $("cb-sort").onchange = function (e) { S.sort = e.target.value; renderPicker(); };
     $("cb-oldv").onchange = function (e) { S.old = e.target.checked; renderPicker(); };
